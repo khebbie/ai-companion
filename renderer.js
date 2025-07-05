@@ -542,6 +542,13 @@ class FileExplorer {
       }
     });
 
+    // Also hide on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.hideContextMenu();
+      }
+    });
+
     // Handle right-click on empty space
     this.fileTree.addEventListener('contextmenu', (e) => {
       if (e.target === this.fileTree) {
