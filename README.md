@@ -1,6 +1,8 @@
 # AI Companion
 
 A lightweight Electron file explorer with comprehensive git integration, inspired by VS Code's file tree. Designed to run alongside CLI development workflows for enhanced productivity.
+AI Companion works well with at code flow lige Claude Code.
+AI Companion is coded 100% by Claude Code.
 
 ## Features
 
