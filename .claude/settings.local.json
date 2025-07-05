@@ -17,7 +17,9 @@
       "Bash(time npx playwright test file-tree.spec.js --grep \"should display file tree with correct structure\" --timeout=60000)",
       "Bash(time npx playwright test:*)",
       "Bash(time npm run test:fast)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm test:*)",
+      "Bash(ai-companion:*)"
     ],
     "deny": []
   }

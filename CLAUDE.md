@@ -36,7 +36,7 @@ ai-companion /restricted/path --dangerously-skip-permissions
 
 ## Project Structure
 ```
-/home/khebbie/Documents/src/typescript/explore/
+Root
 ├── main.js          # Electron main process
 ├── renderer.js      # File explorer logic + hot reload
 ├── index.html       # Main UI structure
