@@ -159,23 +159,67 @@ npm start /restricted/path -- --dangerously-skip-permissions --no-sandbox
 
 Window state is automatically saved to `~/.file-explorer-window-state.json` and restored on startup.
 
+## Testing
+
+AI Companion includes a comprehensive test suite using Playwright for Electron to ensure reliable behavior across all features.
+
+### Running Tests
+```bash
+# Install test dependencies (if not already installed)
+npm install
+
+# Run all tests (headless)
+npm test
+
+# Run tests with visible browser (for debugging)
+npm run test:headed
+
+# Run tests in debug mode
+npm run test:debug
+
+# Run specific test file
+npx playwright test file-tree.spec.js
+```
+
+### Test Coverage
+- ✅ **File Management** - File tree display, navigation, auto-refresh
+- ✅ **Context Menu Operations** - Create, rename, delete, reveal in file manager
+- ✅ **Git Integration** - Status indicators, branch display, real-time updates
+- ✅ **Breadcrumb Navigation** - Path display, clickable segments, working directory changes
+- ✅ **Command Line Interface** - Directory parameters, permission flags, error handling
+- ✅ **Application Lifecycle** - Startup, window management, performance testing
+
+### Test Philosophy
+- **Behavior over Implementation**: Tests focus on user-visible behavior rather than internal code
+- **Integration Testing**: Tests the complete application rather than isolated components
+- **Real Environment**: Uses temporary directories with actual files and git repositories
+- **Cross-platform**: Designed to work across different operating systems
+
+See `tests/README.md` for detailed testing documentation and best practices.
+
 ## Development
 
 ### Project Structure
 ```
 ai-companion/
-├── main.js          # Electron main process
-├── renderer.js      # File explorer logic + hot reload
-├── index.html       # Main UI structure
-├── styles.css       # VS Code-inspired styling
-├── package.json     # Dependencies and scripts
-└── CLAUDE.md        # Project memory and implementation details
+├── main.js              # Electron main process
+├── renderer.js          # File explorer logic + hot reload
+├── index.html           # Main UI structure
+├── styles.css           # VS Code-inspired styling
+├── package.json         # Dependencies and scripts
+├── CLAUDE.md            # Project memory and implementation details
+├── tests/               # Comprehensive test suite
+│   ├── helpers/         # Test utilities and setup
+│   ├── *.spec.js        # Behavior test files
+│   └── README.md        # Testing documentation
+└── playwright.config.js # Test configuration
 ```
 
 ### Key Dependencies
 - **Electron**: Desktop application framework
 - **nodemon**: Development hot reload
 - **electron-reload**: Automatic reload on file changes
+- **@playwright/test**: End-to-end testing framework for Electron
 
 ### Technical Features
 - Node.js fs module for file operations
