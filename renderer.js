@@ -42,6 +42,7 @@ class FileExplorer {
     this.focusedItem = null;
     this.visibleItems = [];
     this.showHiddenFiles = false;
+    this.showDetails = false;
     this.gitStatus = new Map();
     this.gitIgnorePatterns = [];
     this.isGitRepo = false;
@@ -298,10 +299,14 @@ class FileExplorer {
     // Add git status indicator
     const gitStatusIndicator = this.getGitStatusIndicator(item.gitStatus);
 
+    // Add file details if details view is enabled
+    const detailsInfo = this.showDetails ? this.getDetailsInfo(item) : '';
+
     div.innerHTML = `
       ${chevron}
       <span class="icon">${icon}</span>
       <span class="name">${item.name}</span>
+      ${detailsInfo}
       ${gitStatusIndicator}
       ${permissionIcon}
     `;
@@ -311,6 +316,20 @@ class FileExplorer {
     div.addEventListener('contextmenu', (e) => this.handleContextMenu(e, item));
 
     return div;
+  }
+
+  getDetailsInfo(item) {
+    if (!this.showDetails) return '';
+    
+    const sizeInfo = item.isDirectory ? 
+      '<span class="file-size">--</span>' : 
+      `<span class="file-size">${this.formatFileSize(item.size)}</span>`;
+    
+    const modifiedInfo = item.permissionDenied ? 
+      '<span class="file-modified">--</span>' : 
+      `<span class="file-modified">${this.formatLastModified(item.modified)}</span>`;
+    
+    return `<span class="file-details">${sizeInfo}<span class="detail-separator">•</span>${modifiedInfo}</span>`;
   }
 
   getGitStatusIndicator(gitStatus) {
@@ -990,6 +1009,12 @@ class FileExplorer {
       e.preventDefault();
       this.toggleHiddenFiles();
     }
+    
+    // Handle Ctrl+D for toggling details view
+    if (e.ctrlKey && e.key === 'd') {
+      e.preventDefault();
+      this.toggleDetailsView();
+    }
   }
 
   toggleHiddenFiles() {
@@ -1021,6 +1046,72 @@ class FileExplorer {
       indicator.style.display = 'inline-block';
     } else {
       indicator.style.display = 'none';
+    }
+  }
+
+  toggleDetailsView() {
+    this.showDetails = !this.showDetails;
+    console.log(`Details view ${this.showDetails ? 'enabled' : 'disabled'}`);
+    
+    // Update the header to show current state
+    this.updateDetailsIndicator();
+    
+    // Refresh the file tree to show/hide details
+    this.refresh();
+  }
+
+  updateDetailsIndicator() {
+    // Find or create the details indicator
+    let indicator = document.getElementById('details-indicator');
+    if (!indicator) {
+      indicator = document.createElement('span');
+      indicator.id = 'details-indicator';
+      indicator.className = 'details-indicator';
+      
+      // Add to header next to other indicators
+      const headerRight = document.querySelector('.header-right');
+      headerRight.insertBefore(indicator, headerRight.firstChild);
+    }
+    
+    if (this.showDetails) {
+      indicator.textContent = 'Details';
+      indicator.style.display = 'inline-block';
+    } else {
+      indicator.style.display = 'none';
+    }
+  }
+
+  formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
+  formatLastModified(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffWeeks = Math.floor(diffDays / 7);
+    const diffMonths = Math.floor(diffDays / 30);
+    
+    if (diffHours < 1) {
+      const diffMinutes = Math.floor(diffMs / (1000 * 60));
+      return diffMinutes < 1 ? 'just now' : `${diffMinutes}m ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    } else if (diffDays < 7) {
+      return diffDays === 1 ? 'yesterday' : `${diffDays}d ago`;
+    } else if (diffWeeks < 4) {
+      return `${diffWeeks}w ago`;
+    } else if (diffMonths < 12) {
+      return `${diffMonths}mo ago`;
+    } else {
+      return date.toLocaleDateString();
     }
   }
 

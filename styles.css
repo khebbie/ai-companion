@@ -353,6 +353,22 @@ body {
   margin-right: 2px;
 }
 
+.details-indicator {
+  font-size: 11px;
+  color: #569cd6;
+  font-weight: 500;
+  background-color: #1e1e1e;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #3e3e42;
+  margin-right: 8px;
+}
+
+.details-indicator::before {
+  content: "📋 ";
+  margin-right: 2px;
+}
+
 /* Styling for hidden files (starting with .) when shown */
 .tree-item.hidden-file {
   opacity: 0.7;
@@ -394,4 +410,40 @@ body {
   color: #ffa500;
   font-weight: bold;
   margin-right: 2px;
+}
+
+/* File details view styling */
+.file-details {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #858585;
+  padding-right: 8px;
+}
+
+.file-size {
+  min-width: 50px;
+  text-align: right;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+}
+
+.file-modified {
+  min-width: 60px;
+  text-align: right;
+}
+
+.detail-separator {
+  color: #555;
+  font-weight: bold;
+}
+
+/* Adjustments for details view */
+.tree-item {
+  min-height: 22px;
+}
+
+.tree-item .name {
+  margin-right: 8px;
 }
