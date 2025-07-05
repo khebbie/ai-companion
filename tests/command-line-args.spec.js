@@ -17,7 +17,7 @@ test.describe('Command Line Arguments and Permission Handling', () => {
     await electronApp.waitForFileTree();
     
     // App should start in the test directory we specified
-    await expect(window.locator('.file-item:has-text("README.md")')).toBeVisible();
+    await expect(window.locator('.tree-item:has-text("README.md")')).toBeVisible();
     
     // Breadcrumb should show the test directory path
     const breadcrumbText = await window.locator('.breadcrumb').textContent();
@@ -31,7 +31,7 @@ test.describe('Command Line Arguments and Permission Handling', () => {
     
     // App should still function normally
     await expect(window.locator('.file-tree')).toBeVisible();
-    await expect(window.locator('.file-item')).toBeVisible();
+    await expect(window.locator('.tree-item')).toBeVisible();
     
     // This test verifies the flag doesn't break normal operation
     // The actual permission bypassing would be tested with restricted directories
@@ -76,7 +76,7 @@ test.describe('Command Line Arguments and Permission Handling', () => {
     
     // App should function with multiple flags
     await expect(window.locator('.file-tree')).toBeVisible();
-    await expect(window.locator('.file-item')).toBeVisible();
+    await expect(window.locator('.tree-item')).toBeVisible();
   });
 
   test('should prioritize first non-flag argument as directory', async () => {
@@ -147,7 +147,7 @@ test.describe('Command Line Arguments and Permission Handling', () => {
       await window.waitForTimeout(1000);
       
       // File might show lock icon or dimmed styling
-      const fileItem = window.locator('.file-item:has-text("restricted.txt")');
+      const fileItem = window.locator('.tree-item:has-text("restricted.txt")');
       if (await fileItem.count() > 0) {
         // Check for permission indicators (lock icon, dimmed styling, etc.)
         const hasPermissionIndicator = await fileItem.evaluate(el => {

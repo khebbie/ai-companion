@@ -49,7 +49,7 @@ test.describe('Git Integration and Status Indicators', () => {
     await window.waitForTimeout(2000);
     
     // Should show "M" badge for modified file
-    const modifiedFile = window.locator('.file-item:has-text("README.md")');
+    const modifiedFile = window.locator('.tree-item:has-text("README.md")');
     await expect(modifiedFile.locator('.git-status:has-text("M"), [class*="modified"]')).toBeVisible({ timeout: 5000 });
   });
 
@@ -67,7 +67,7 @@ test.describe('Git Integration and Status Indicators', () => {
     await window.waitForTimeout(2000);
     
     // Should show "?" badge for untracked file
-    const newFile = window.locator('.file-item:has-text("new-untracked.js")');
+    const newFile = window.locator('.tree-item:has-text("new-untracked.js")');
     await expect(newFile).toBeVisible({ timeout: 3000 });
     await expect(newFile.locator('.git-status:has-text("?"), [class*="untracked"]')).toBeVisible({ timeout: 5000 });
   });
@@ -93,7 +93,7 @@ test.describe('Git Integration and Status Indicators', () => {
       await window.waitForTimeout(2000);
       
       // Should show "A" badge for added file
-      const stagedFile = window.locator('.file-item:has-text("staged-file.js")');
+      const stagedFile = window.locator('.tree-item:has-text("staged-file.js")');
       await expect(stagedFile).toBeVisible({ timeout: 3000 });
       await expect(stagedFile.locator('.git-status:has-text("A"), [class*="added"]')).toBeVisible({ timeout: 5000 });
       
@@ -127,7 +127,7 @@ test.describe('Git Integration and Status Indicators', () => {
     await window.waitForTimeout(2000);
     
     // Ignored file should appear dimmed/italicized
-    const ignoredFile = window.locator('.file-item:has-text("ignored-file.txt")');
+    const ignoredFile = window.locator('.tree-item:has-text("ignored-file.txt")');
     await expect(ignoredFile).toBeVisible({ timeout: 3000 });
     
     // Check for dimmed/italic styling
@@ -147,7 +147,7 @@ test.describe('Git Integration and Status Indicators', () => {
     await window.waitForTimeout(1000);
     
     // Verify initial state (no M badge on README.md)
-    const readmeFile = window.locator('.file-item:has-text("README.md")');
+    const readmeFile = window.locator('.tree-item:has-text("README.md")');
     
     // Modify the file
     const fs = require('fs');
@@ -191,7 +191,7 @@ test.describe('Git Integration and Status Indicators', () => {
       
       // App should still work without git
       await expect(window.locator('.file-tree')).toBeVisible();
-      await expect(window.locator('.file-item:has-text("README.md")')).toBeVisible();
+      await expect(window.locator('.tree-item:has-text("README.md")')).toBeVisible();
       
       // Should not show git branch info or git status badges
       const branchInfo = window.locator('.branch-info');

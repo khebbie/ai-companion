@@ -86,7 +86,7 @@ class ElectronApp {
 
   async getFileTreeItems() {
     await this.waitForFileTree();
-    return await this.window.locator('.file-item').all();
+    return await this.window.locator('.tree-item').all();
   }
 
   async getBreadcrumbs() {

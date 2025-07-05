@@ -126,7 +126,7 @@ test.describe('Application Lifecycle and Window Management', () => {
     
     // All files should eventually appear
     for (let i = 0; i < 5; i++) {
-      await expect(window.locator(`.file-item:has-text("rapid-${i}.txt")`)).toBeVisible({ timeout: 5000 });
+      await expect(window.locator(`.tree-item:has-text("rapid-${i}.txt")`)).toBeVisible({ timeout: 5000 });
     }
   });
 
