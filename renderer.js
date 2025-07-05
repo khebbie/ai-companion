@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { shell } = require('electron');
+const { execSync } = require('child_process');
 
 // Check if permission skipping is enabled
 const skipPermissions = process.argv.includes('--skip-permissions');
@@ -25,14 +26,20 @@ class FileExplorer {
     this.refreshBtn = document.getElementById('refresh-btn');
     this.breadcrumb = document.getElementById('breadcrumb');
     this.contextMenu = document.getElementById('context-menu');
+    this.branchInfo = document.getElementById('branch-info');
     this.watchers = new Map();
     this.selectedItem = null;
+    this.gitStatus = new Map();
+    this.gitIgnorePatterns = [];
+    this.isGitRepo = false;
+    this.currentBranch = null;
     
     this.init();
   }
 
   init() {
     this.refreshBtn.addEventListener('click', () => this.refresh());
+    this.checkGitRepository();
     this.updateBreadcrumb();
     this.loadFileTree();
     this.setupFileWatcher();
@@ -41,8 +48,114 @@ class FileExplorer {
 
   refresh() {
     this.fileTree.innerHTML = '';
+    this.checkGitRepository();
     this.updateBreadcrumb();
     this.loadFileTree();
+  }
+
+  checkGitRepository() {
+    try {
+      // Check if we're in a git repository
+      const gitDir = execSync('git rev-parse --git-dir', { 
+        cwd: this.currentPath,
+        encoding: 'utf8',
+        stdio: 'pipe'
+      }).trim();
+      
+      this.isGitRepo = true;
+      
+      // Get current branch
+      try {
+        this.currentBranch = execSync('git branch --show-current', {
+          cwd: this.currentPath,
+          encoding: 'utf8',
+          stdio: 'pipe'
+        }).trim();
+      } catch (branchError) {
+        this.currentBranch = null;
+      }
+      
+      // Load git status
+      this.loadGitStatus();
+      
+      // Load gitignore patterns
+      this.loadGitIgnorePatterns();
+      
+      // Update branch display
+      this.updateBranchInfo();
+      
+    } catch (error) {
+      this.isGitRepo = false;
+      this.currentBranch = null;
+      this.gitStatus.clear();
+      this.gitIgnorePatterns = [];
+      this.updateBranchInfo();
+    }
+  }
+
+  updateBranchInfo() {
+    if (this.isGitRepo && this.currentBranch) {
+      this.branchInfo.textContent = this.currentBranch;
+      this.branchInfo.style.display = 'inline-block';
+    } else {
+      this.branchInfo.style.display = 'none';
+    }
+  }
+
+  loadGitStatus() {
+    if (!this.isGitRepo) return;
+    
+    try {
+      const statusOutput = execSync('git status --porcelain', {
+        cwd: this.currentPath,
+        encoding: 'utf8',
+        stdio: 'pipe'
+      });
+      
+      this.gitStatus.clear();
+      
+      statusOutput.split('\n').forEach(line => {
+        if (line.trim()) {
+          const status = line.substring(0, 2);
+          const filePath = line.substring(3);
+          const fullPath = path.resolve(this.currentPath, filePath);
+          this.gitStatus.set(fullPath, status);
+        }
+      });
+    } catch (error) {
+      console.error('Error loading git status:', error);
+    }
+  }
+
+  loadGitIgnorePatterns() {
+    if (!this.isGitRepo) return;
+    
+    try {
+      const gitignorePath = path.join(this.currentPath, '.gitignore');
+      if (fs.existsSync(gitignorePath)) {
+        const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
+        this.gitIgnorePatterns = gitignoreContent
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line && !line.startsWith('#'));
+      }
+    } catch (error) {
+      console.error('Error loading gitignore:', error);
+    }
+  }
+
+  isFileIgnored(filePath) {
+    if (!this.isGitRepo || this.gitIgnorePatterns.length === 0) return false;
+    
+    const relativePath = path.relative(this.currentPath, filePath);
+    
+    return this.gitIgnorePatterns.some(pattern => {
+      // Simple pattern matching - could be enhanced with proper glob matching
+      if (pattern.endsWith('/')) {
+        return relativePath.startsWith(pattern.slice(0, -1));
+      }
+      return relativePath === pattern || relativePath.includes(pattern);
+    });
   }
 
   loadFileTree() {
@@ -67,12 +180,18 @@ class FileExplorer {
         try {
           const stats = fs.statSync(fullPath);
           
+          // Get git status for this file
+          const gitStatus = this.gitStatus.get(fullPath) || '';
+          const isIgnored = this.isFileIgnored(fullPath);
+          
           result.push({
             name: item,
             path: fullPath,
             isDirectory: stats.isDirectory(),
             size: stats.size,
-            modified: stats.mtime
+            modified: stats.mtime,
+            gitStatus: gitStatus,
+            isIgnored: isIgnored
           });
         } catch (statError) {
           if (skipPermissions) {
@@ -83,7 +202,9 @@ class FileExplorer {
               isDirectory: false, // Default to file if we can't stat
               size: 0,
               modified: new Date(),
-              permissionDenied: true
+              permissionDenied: true,
+              gitStatus: '',
+              isIgnored: false
             });
           } else {
             console.error('Permission denied accessing:', fullPath);
@@ -118,9 +239,25 @@ class FileExplorer {
   createTreeItem(item, depth) {
     const div = document.createElement('div');
     div.className = `tree-item ${item.isDirectory ? 'folder' : 'file'} nested-${Math.min(depth, 5)}`;
+    
+    // Add git status classes
+    if (item.gitStatus) {
+      const status = item.gitStatus.trim();
+      if (status.includes('M')) div.className += ' git-modified';
+      if (status.includes('A')) div.className += ' git-added';
+      if (status.includes('D')) div.className += ' git-deleted';
+      if (status.includes('U')) div.className += ' git-unmerged';
+      if (status.includes('?')) div.className += ' git-untracked';
+    }
+    
     if (item.permissionDenied) {
       div.className += ' permission-denied';
     }
+    
+    if (item.isIgnored) {
+      div.className += ' git-ignored';
+    }
+    
     div.dataset.path = item.path;
 
     const icon = this.getIcon(item);
@@ -129,11 +266,15 @@ class FileExplorer {
       '<span class="chevron"></span>';
 
     const permissionIcon = item.permissionDenied ? '<span class="permission-icon">🔒</span>' : '';
+    
+    // Add git status indicator
+    const gitStatusIndicator = this.getGitStatusIndicator(item.gitStatus);
 
     div.innerHTML = `
       ${chevron}
       <span class="icon">${icon}</span>
       <span class="name">${item.name}</span>
+      ${gitStatusIndicator}
       ${permissionIcon}
     `;
 
@@ -142,6 +283,21 @@ class FileExplorer {
     div.addEventListener('contextmenu', (e) => this.handleContextMenu(e, item));
 
     return div;
+  }
+
+  getGitStatusIndicator(gitStatus) {
+    if (!gitStatus || !this.isGitRepo) return '';
+    
+    const status = gitStatus.trim();
+    const indicators = [];
+    
+    if (status.includes('M')) indicators.push('<span class="git-status-indicator git-modified">M</span>');
+    if (status.includes('A')) indicators.push('<span class="git-status-indicator git-added">A</span>');
+    if (status.includes('D')) indicators.push('<span class="git-status-indicator git-deleted">D</span>');
+    if (status.includes('U')) indicators.push('<span class="git-status-indicator git-unmerged">U</span>');
+    if (status.includes('?')) indicators.push('<span class="git-status-indicator git-untracked">?</span>');
+    
+    return indicators.length > 0 ? `<span class="git-status">${indicators.join('')}</span>` : '';
   }
 
   getIcon(item) {

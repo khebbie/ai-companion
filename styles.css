@@ -23,6 +23,12 @@ body {
   border-bottom: 1px solid #3e3e42;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .header h3 {
   margin: 0;
   font-size: 11px;
@@ -233,5 +239,91 @@ body {
 .permission-icon {
   margin-left: 4px;
   font-size: 12px;
+  color: #ffa500;
+}
+
+/* Git integration styles */
+.git-status {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+}
+
+.git-status-indicator {
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 3px;
+  border-radius: 2px;
+  background-color: #37373d;
+  color: #ffffff;
+}
+
+.git-status-indicator.git-modified {
+  background-color: #ffa500;
+  color: #000000;
+}
+
+.git-status-indicator.git-added {
+  background-color: #4caf50;
+  color: #000000;
+}
+
+.git-status-indicator.git-deleted {
+  background-color: #f44336;
+  color: #ffffff;
+}
+
+.git-status-indicator.git-unmerged {
+  background-color: #9c27b0;
+  color: #ffffff;
+}
+
+.git-status-indicator.git-untracked {
+  background-color: #2196f3;
+  color: #ffffff;
+}
+
+/* Git file color coding */
+.tree-item.git-modified .name {
+  color: #ffa500;
+}
+
+.tree-item.git-added .name {
+  color: #4caf50;
+}
+
+.tree-item.git-deleted .name {
+  color: #f44336;
+}
+
+.tree-item.git-unmerged .name {
+  color: #9c27b0;
+}
+
+.tree-item.git-untracked .name {
+  color: #2196f3;
+}
+
+.tree-item.git-ignored {
+  opacity: 0.4;
+}
+
+.tree-item.git-ignored .name {
+  font-style: italic;
+  color: #6c6c6c;
+}
+
+.branch-info {
+  font-size: 11px;
+  color: #569cd6;
+  font-weight: 500;
+  background-color: #1e1e1e;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #3e3e42;
+}
+
+.branch-info::before {
+  content: "⚡ ";
   color: #ffa500;
 }
