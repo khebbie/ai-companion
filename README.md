@@ -9,7 +9,6 @@ A lightweight Electron file explorer with comprehensive git integration, inspire
 - **Breadcrumb navigation** with clickable path segments showing actual username
 - **Right-click context menu** for file operations (rename, delete, new file/folder, reveal in file manager)
 - **Auto-refresh** with file system watchers for real-time updates
-- **Permission handling** with `--dangerously-skip-permissions` flag for restricted files
 
 ### 🎯 Git Integration
 - **Real-time git status indicators** (M, A, D, U, ?) with color-coded badges

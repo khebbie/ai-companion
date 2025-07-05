@@ -1,5 +1,8 @@
  Here are the key features missing compared to VS Code's file explorer:
 
+Make window start at the last position it had
+the Breadcrumb looks clunky with too much space.
+
   Git Integration:
   - Git status indicators (M, A, D, U, etc.)
   - File color coding (green for new, yellow for modified, red for deleted)
