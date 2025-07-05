@@ -431,6 +431,9 @@ class FileExplorer {
     this.expandedFolders.forEach(folderPath => {
       this.watchDirectory(folderPath);
     });
+
+    // Watch git directory for commits and branch changes
+    this.watchGitDirectory();
   }
 
   watchDirectory(dirPath) {
@@ -444,6 +447,10 @@ class FileExplorer {
           // Debounce the refresh to avoid excessive updates
           clearTimeout(this.refreshTimeout);
           this.refreshTimeout = setTimeout(() => {
+            // Refresh git status when files change
+            if (this.isGitRepo) {
+              this.loadGitStatus();
+            }
             this.refresh();
           }, 100);
         }
@@ -452,6 +459,37 @@ class FileExplorer {
       this.watchers.set(dirPath, watcher);
     } catch (error) {
       console.error('Error watching directory:', dirPath, error);
+    }
+  }
+
+  watchGitDirectory() {
+    if (!this.isGitRepo) return;
+
+    try {
+      const gitDir = path.join(this.currentPath, '.git');
+      if (!fs.existsSync(gitDir)) return;
+
+      // Watch for changes in .git directory (commits, branch changes, etc.)
+      const gitWatcher = fs.watch(gitDir, { recursive: true }, (eventType, filename) => {
+        // Only refresh git status for relevant git files
+        if (filename && (
+          filename.includes('HEAD') || 
+          filename.includes('index') || 
+          filename.includes('refs/') ||
+          filename.includes('logs/')
+        )) {
+          clearTimeout(this.gitRefreshTimeout);
+          this.gitRefreshTimeout = setTimeout(() => {
+            this.loadGitStatus();
+            this.checkGitRepository(); // This will update branch info too
+            this.refresh();
+          }, 200);
+        }
+      });
+
+      this.watchers.set(gitDir, gitWatcher);
+    } catch (error) {
+      console.error('Error watching git directory:', error);
     }
   }
 
