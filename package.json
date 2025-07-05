@@ -9,6 +9,7 @@
     "start": "electron .",
     "dev": "nodemon --exec \"electron . --no-sandbox\" --ext js,html,css",
     "test": "playwright test",
+    "test:fast": "playwright test --workers=3 --timeout=10000",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug"
   },

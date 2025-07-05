@@ -40,14 +40,14 @@ test.describe('File Tree Display and Navigation', () => {
     await srcFolder.click();
     
     // Wait a moment for expansion
-    await window.waitForTimeout(500);
+    await window.waitForTimeout(200);
     
     // Check that folder contents are visible
     await expect(window.locator('.tree-item:has-text("index.js")')).toBeVisible();
     
     // Click again to collapse
     await srcFolder.click();
-    await window.waitForTimeout(500);
+    await window.waitForTimeout(200);
     
     // Contents should be hidden (or at least folder should be collapsed)
     const expandedItems = await window.locator('.tree-item.expanded').count();
@@ -65,7 +65,7 @@ test.describe('File Tree Display and Navigation', () => {
     // Note: We can't easily test the actual file opening since it uses system default
     // But we can verify the double-click event was processed without errors
     // This is a behavior test - we ensure the UI responds to double-click
-    await window.waitForTimeout(100);
+    await window.waitForTimeout(50);
     
     // Verify the app is still responsive
     await expect(window.locator('.file-tree')).toBeVisible();

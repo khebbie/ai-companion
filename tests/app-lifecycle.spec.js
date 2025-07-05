@@ -150,7 +150,7 @@ test.describe('Application Lifecycle and Window Management', () => {
     }
     
     // Wait for files to be detected
-    await window.waitForTimeout(3000);
+    await window.waitForTimeout(1000);
     
     // App should still be responsive
     const startTime = Date.now();

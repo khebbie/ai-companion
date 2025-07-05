@@ -17,50 +17,64 @@ class ElectronApp {
     // Create some test files and folders
     await this.setupTestFiles();
     
-    // Launch the Electron app
+    // Launch the Electron app with optimizations
     this.app = await electron.launch({
-      args: [path.join(__dirname, '../../main.js'), this.testDir, '--no-sandbox', ...args],
-      env: { ...process.env, NODE_ENV: 'test' }
+      args: [
+        path.join(__dirname, '../../main.js'), 
+        this.testDir, 
+        '--no-sandbox',
+        '--disable-dev-shm-usage', // Reduce memory usage
+        '--disable-extensions',     // Disable extensions for speed
+        ...args
+      ],
+      env: { ...process.env, NODE_ENV: 'test' },
+      timeout: 10000 // Faster launch timeout
     });
     
-    // Get the main window
+    // Get the main window and wait for it to be ready
     this.window = await this.app.firstWindow();
-    await this.window.waitForLoadState('domcontentloaded');
+    await this.window.waitForLoadState('domcontentloaded', { timeout: 5000 });
     
     return this.window;
   }
 
   async setupTestFiles() {
-    // Create test directory structure
-    const dirs = ['src', 'tests', 'docs'];
-    const files = [
-      'README.md',
-      'package.json',
-      'src/index.js',
-      'src/utils.js',
-      'tests/test.js',
-      'docs/guide.md'
-    ];
+    // Create test directory structure and files in batch
+    const structure = {
+      'README.md': '# Test Project\nThis is a test project.',
+      'package.json': '{"name": "test-project", "version": "1.0.0"}',
+      'src/index.js': 'console.log("main");',
+      'src/utils.js': 'export function util() {}',
+      'tests/test.js': 'test("example", () => {});',
+      'docs/guide.md': '# Guide\nTest documentation.'
+    };
 
-    for (const dir of dirs) {
-      fs.mkdirSync(path.join(this.testDir, dir), { recursive: true });
+    // Create all directories and files efficiently
+    for (const [filePath, content] of Object.entries(structure)) {
+      const fullPath = path.join(this.testDir, filePath);
+      const dir = path.dirname(fullPath);
+      
+      // Create directory if it doesn't exist
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      // Write file
+      fs.writeFileSync(fullPath, content);
     }
 
-    for (const file of files) {
-      const filePath = path.join(this.testDir, file);
-      fs.writeFileSync(filePath, `// Test content for ${file}`);
-    }
-
-    // Initialize git repo for git-related tests
+    // Initialize git repo for git-related tests (optimized)
     try {
       const { execSync } = require('child_process');
-      execSync('git init', { cwd: this.testDir, stdio: 'ignore' });
-      execSync('git config user.name "Test User"', { cwd: this.testDir, stdio: 'ignore' });
-      execSync('git config user.email "test@example.com"', { cwd: this.testDir, stdio: 'ignore' });
-      execSync('git add .', { cwd: this.testDir, stdio: 'ignore' });
-      execSync('git commit -m "Initial commit"', { cwd: this.testDir, stdio: 'ignore' });
+      // Use single command with && to reduce overhead
+      execSync('git init && git config user.name "Test User" && git config user.email "test@example.com" && git add . && git commit -m "Initial commit"', { 
+        cwd: this.testDir, 
+        stdio: 'ignore',
+        timeout: 5000 // Add timeout to prevent hanging
+      });
     } catch (error) {
       // Git not available or failed - tests will handle this gracefully
+      console.warn('Git setup failed, some tests may not work:', error.message);
     }
   }
 
@@ -76,12 +90,12 @@ class ElectronApp {
   }
 
   async waitForFileTree() {
-    // Wait for the file tree to be populated
-    await this.window.waitForSelector('.file-tree', { timeout: 5000 });
+    // Wait for the file tree to be populated (optimized)
+    await this.window.waitForSelector('.file-tree', { timeout: 3000 });
     await this.window.waitForFunction(() => {
       const fileTree = document.querySelector('.file-tree');
       return fileTree && fileTree.children.length > 0;
-    });
+    }, { timeout: 3000 });
   }
 
   async getFileTreeItems() {

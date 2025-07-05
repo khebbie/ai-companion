@@ -46,7 +46,7 @@ test.describe('Git Integration and Status Indicators', () => {
     fs.appendFileSync(filePath, '\n# Modified content');
     
     // Wait for git status to update
-    await window.waitForTimeout(2000);
+    await window.waitForTimeout(1000);
     
     // Should show "M" badge for modified file
     const modifiedFile = window.locator('.tree-item:has-text("README.md")');
@@ -64,7 +64,7 @@ test.describe('Git Integration and Status Indicators', () => {
     fs.writeFileSync(newFilePath, 'console.log("new file");');
     
     // Wait for file to appear and git status to update
-    await window.waitForTimeout(2000);
+    await window.waitForTimeout(1000);
     
     // Should show "?" badge for untracked file
     const newFile = window.locator('.tree-item:has-text("new-untracked.js")');
