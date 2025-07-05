@@ -153,4 +153,58 @@ test.describe('Context Menu Operations', () => {
     // Context menu should have "Reveal in File Manager" option
     await expect(window.locator('.context-menu-item:has-text("Reveal in File Manager")')).toBeVisible();
   });
+
+  test('should show "Open new AI Companion here" option', async () => {
+    const window = await electronApp.launch();
+    await electronApp.waitForFileTree();
+    
+    // Right-click on a folder
+    const folderItem = window.locator('.tree-item:has-text("src")').first();
+    await folderItem.click({ button: 'right' });
+    
+    // Context menu should have "Open new AI Companion here" option
+    await expect(window.locator('.context-menu-item:has-text("Open new AI Companion here")')).toBeVisible();
+    
+    // Also test on a file
+    await window.locator('body').click({ position: { x: 10, y: 10 } }); // Close menu
+    const fileItem = window.locator('.tree-item:has-text("README.md")').first();
+    await fileItem.click({ button: 'right' });
+    
+    await expect(window.locator('.context-menu-item:has-text("Open new AI Companion here")')).toBeVisible();
+  });
+
+  test('should attempt to open new AI Companion instance', async () => {
+    const window = await electronApp.launch();
+    await electronApp.waitForFileTree();
+    
+    // Setup console monitoring to capture IPC communication
+    const consoleMessages = [];
+    window.on('console', msg => {
+      consoleMessages.push(msg.text());
+    });
+    
+    // Right-click on a folder
+    const folderItem = window.locator('.tree-item:has-text("src")').first();
+    await folderItem.click({ button: 'right' });
+    
+    // Click "Open new AI Companion here"
+    await window.locator('.context-menu-item:has-text("Open new AI Companion here")').click();
+    
+    // Wait a moment for the IPC communication to complete
+    await window.waitForTimeout(1000);
+    
+    // Check if there were any console messages about the operation
+    // This will help us debug what's happening
+    const relevantMessages = consoleMessages.filter(msg => 
+      msg.includes('AI Companion') || 
+      msg.includes('IPC') || 
+      msg.includes('spawn') ||
+      msg.includes('Error')
+    );
+    
+    console.log('Console messages during test:', relevantMessages);
+    
+    // The menu should close after clicking
+    await expect(window.locator('.context-menu')).not.toBeVisible();
+  });
 });

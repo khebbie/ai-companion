@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { shell } = require('electron');
+const { shell, ipcRenderer } = require('electron');
 const { execSync } = require('child_process');
 
 // Check if permission skipping is enabled
@@ -602,6 +602,7 @@ class FileExplorer {
     if (item) {
       this.addContextMenuSeparator();
       this.addContextMenuItem('📂', 'Reveal in File Manager', () => this.revealInFileManager(item));
+      this.addContextMenuItem('🚀', 'Open new AI Companion here', () => this.openNewAICompanion(item));
     }
 
     // Position and show menu
@@ -769,6 +770,26 @@ class FileExplorer {
 
   revealInFileManager(item) {
     shell.showItemInFolder(item.path);
+  }
+
+  async openNewAICompanion(item) {
+    // Determine the target directory
+    const targetDir = item.isDirectory ? item.path : path.dirname(item.path);
+    
+    try {
+      // Use IPC to communicate with main process
+      const result = await ipcRenderer.invoke('open-new-ai-companion', targetDir);
+      
+      if (result.success) {
+        console.log(result.message);
+      } else {
+        console.error('Failed to open new AI Companion:', result.message);
+        alert(`Failed to open new AI Companion window. Error: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('IPC communication error:', error);
+      alert(`Failed to communicate with main process. Error: ${error.message}`);
+    }
   }
 
   setupKeyboardNavigation() {

@@ -1,0 +1,89 @@
+#!/usr/bin/env node
+
+const { spawn } = require('child_process');
+const path = require('path');
+const fs = require('fs');
+
+// Get the directory where this script is located
+const scriptDir = path.dirname(__filename);
+const appDir = path.dirname(scriptDir);
+
+// Try to find electron in various locations
+function findElectron() {
+  const possiblePaths = [
+    // Local node_modules (most likely)
+    path.join(appDir, 'node_modules', '.bin', 'electron'),
+    path.join(appDir, 'node_modules', 'electron', 'dist', 'electron'),
+    
+    // Global node_modules
+    path.join(__dirname, '..', '..', '..', 'electron', 'dist', 'electron'),
+    
+    // Try npx
+    'npx electron',
+    
+    // System electron (unlikely but possible)
+    'electron'
+  ];
+  
+  for (const electronPath of possiblePaths) {
+    if (electronPath === 'npx electron' || electronPath === 'electron') {
+      continue; // Skip these for file existence check
+    }
+    
+    if (fs.existsSync(electronPath)) {
+      return electronPath;
+    }
+  }
+  
+  // Fallback to npx
+  return 'npx electron';
+}
+
+// Get command line arguments (skip node and script name)
+const args = process.argv.slice(2);
+
+// Find electron
+const electronPath = findElectron();
+
+// Add the main.js file as the first argument, plus --no-sandbox for compatibility
+const mainJsPath = path.join(appDir, 'main.js');
+const electronArgs = ['--no-sandbox', mainJsPath, ...args];
+
+console.log(`Starting AI Companion with electron at: ${electronPath}`);
+console.log(`Args: ${electronArgs.join(' ')}`);
+
+// Spawn electron with the main.js file
+const child = spawn(electronPath, electronArgs, {
+  stdio: 'inherit',
+  detached: false
+});
+
+// Handle exit
+child.on('exit', (code) => {
+  process.exit(code);
+});
+
+child.on('error', (err) => {
+  console.error('Failed to start AI Companion:', err.message);
+  
+  // Try fallback with npx
+  if (!electronPath.includes('npx')) {
+    console.log('Trying fallback with npx electron...');
+    const fallbackChild = spawn('npx', ['electron', ...electronArgs], {
+      stdio: 'inherit',
+      detached: false
+    });
+    
+    fallbackChild.on('exit', (code) => {
+      process.exit(code);
+    });
+    
+    fallbackChild.on('error', (fallbackErr) => {
+      console.error('Fallback also failed:', fallbackErr.message);
+      console.error('Please ensure electron is installed: npm install -g electron');
+      process.exit(1);
+    });
+  } else {
+    process.exit(1);
+  }
+});

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "main.js",
   "bin": {
-    "ai-companion": "./main.js"
+    "ai-companion": "./bin/ai-companion"
   },
   "scripts": {
     "start": "electron .",
