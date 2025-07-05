@@ -212,6 +212,7 @@ class FileExplorer {
   updateBreadcrumb() {
     const parts = this.currentPath.split(path.sep).filter(part => part !== '');
     const homeDir = require('os').homedir();
+    const username = require('os').userInfo().username;
     
     this.breadcrumb.innerHTML = '';
     
@@ -219,7 +220,7 @@ class FileExplorer {
     const rootPath = path.sep;
     const rootItem = document.createElement('span');
     rootItem.className = 'breadcrumb-item';
-    rootItem.textContent = this.currentPath === homeDir ? '~' : '/';
+    rootItem.textContent = this.currentPath === homeDir ? username : '/';
     rootItem.addEventListener('click', () => this.navigateToPath(this.currentPath === homeDir ? homeDir : rootPath));
     this.breadcrumb.appendChild(rootItem);
     
@@ -242,9 +243,9 @@ class FileExplorer {
         item.classList.add('current');
       }
       
-      // Show home symbol if this is the home directory
+      // Show username if this is the home directory
       if (cumulativePath === homeDir) {
-        item.textContent = '~';
+        item.textContent = username;
       } else {
         item.textContent = part;
       }
