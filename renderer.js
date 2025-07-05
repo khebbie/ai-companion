@@ -347,7 +347,10 @@ class FileExplorer {
   handleItemDoubleClick(e, item) {
     e.stopPropagation();
     
-    if (!item.isDirectory) {
+    if (item.isDirectory) {
+      // Change application focus to the double-clicked folder
+      this.setApplicationFocus(item.path);
+    } else {
       // Open file with default application
       shell.openPath(item.path);
     }
@@ -377,7 +380,9 @@ class FileExplorer {
     const rootItem = document.createElement('span');
     rootItem.className = 'breadcrumb-item';
     rootItem.textContent = this.currentPath === homeDir ? username : '/';
-    rootItem.addEventListener('click', () => this.navigateToPath(this.currentPath === homeDir ? homeDir : rootPath));
+    const rootTargetPath = this.currentPath === homeDir ? homeDir : rootPath;
+    rootItem.addEventListener('click', () => this.navigateToPath(rootTargetPath));
+    rootItem.addEventListener('dblclick', () => this.setApplicationFocus(rootTargetPath));
     this.breadcrumb.appendChild(rootItem);
     
     // Build cumulative path and add breadcrumb items
@@ -408,6 +413,7 @@ class FileExplorer {
       
       const targetPath = cumulativePath;
       item.addEventListener('click', () => this.navigateToPath(targetPath));
+      item.addEventListener('dblclick', () => this.setApplicationFocus(targetPath));
       this.breadcrumb.appendChild(item);
     }
   }
@@ -417,6 +423,22 @@ class FileExplorer {
     this.expandedFolders.clear(); // Clear expanded state when navigating
     this.setupFileWatcher(); // Setup watcher for new path
     this.refresh();
+  }
+
+  setApplicationFocus(targetPath) {
+    // Change application's current working directory focus
+    try {
+      process.chdir(targetPath);
+      this.currentPath = targetPath;
+      this.expandedFolders.clear(); // Clear expanded state when changing focus
+      this.setupFileWatcher(); // Setup watcher for new path
+      this.refresh();
+      console.log(`Application focus changed to: ${targetPath}`);
+    } catch (error) {
+      console.error('Error changing application focus:', error);
+      // Fallback to navigation if changing working directory fails
+      this.navigateToPath(targetPath);
+    }
   }
 
   setupFileWatcher() {
