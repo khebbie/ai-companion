@@ -1,5 +1,5 @@
 {
-  "name": "explore",
+  "name": "ai-companion",
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
@@ -7,10 +7,10 @@
     "dev": "nodemon --exec \"electron . --no-sandbox\" --ext js,html,css",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["electron", "file-explorer", "git", "development"],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "AI Companion - A lightweight file explorer with git integration for development workflows",
   "devDependencies": {
     "electron": "^37.2.0",
     "electron-reload": "^2.0.0-alpha.1",

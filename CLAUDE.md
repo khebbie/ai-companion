@@ -1,7 +1,7 @@
-# File Explorer - Project Memory
+# AI Companion - Project Memory
 
 ## Project Overview
-Lightweight Electron file explorer app inspired by VS Code's file tree, designed to run alongside CLI development work.
+AI Companion is a lightweight Electron file explorer app inspired by VS Code's file tree, designed to run alongside CLI development work.
 
 ## Key Features
 - VS Code-style dark theme file tree

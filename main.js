@@ -54,7 +54,7 @@ function createWindow() {
       additionalArguments: skipPermissions ? ['--skip-permissions'] : []
     },
     resizable: true,
-    title: 'File Explorer'
+    title: 'AI Companion'
   });
 
   // Hide the menu bar
