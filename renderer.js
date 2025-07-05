@@ -43,6 +43,7 @@ class FileExplorer {
     this.gitIgnorePatterns = [];
     this.isGitRepo = false;
     this.currentBranch = null;
+    this.gitRepoRoot = null;
     
     this.init();
   }
@@ -65,19 +66,20 @@ class FileExplorer {
 
   checkGitRepository() {
     try {
-      // Check if we're in a git repository
-      const gitDir = execSync('git rev-parse --git-dir', { 
+      // Find the git repository root
+      const gitRepoRoot = execSync('git rev-parse --show-toplevel', { 
         cwd: this.currentPath,
         encoding: 'utf8',
         stdio: 'pipe'
       }).trim();
       
       this.isGitRepo = true;
+      this.gitRepoRoot = gitRepoRoot;
       
       // Get current branch
       try {
         this.currentBranch = execSync('git branch --show-current', {
-          cwd: this.currentPath,
+          cwd: this.gitRepoRoot,
           encoding: 'utf8',
           stdio: 'pipe'
         }).trim();
@@ -97,6 +99,7 @@ class FileExplorer {
     } catch (error) {
       this.isGitRepo = false;
       this.currentBranch = null;
+      this.gitRepoRoot = null;
       this.gitStatus.clear();
       this.gitIgnorePatterns = [];
       this.updateBranchInfo();
@@ -113,11 +116,11 @@ class FileExplorer {
   }
 
   loadGitStatus() {
-    if (!this.isGitRepo) return;
+    if (!this.isGitRepo || !this.gitRepoRoot) return;
     
     try {
       const statusOutput = execSync('git status --porcelain', {
-        cwd: this.currentPath,
+        cwd: this.gitRepoRoot,
         encoding: 'utf8',
         stdio: 'pipe'
       });
@@ -128,7 +131,7 @@ class FileExplorer {
         if (line.trim()) {
           const status = line.substring(0, 2);
           const filePath = line.substring(3);
-          const fullPath = path.resolve(this.currentPath, filePath);
+          const fullPath = path.resolve(this.gitRepoRoot, filePath);
           this.gitStatus.set(fullPath, status);
         }
       });
@@ -138,10 +141,10 @@ class FileExplorer {
   }
 
   loadGitIgnorePatterns() {
-    if (!this.isGitRepo) return;
+    if (!this.isGitRepo || !this.gitRepoRoot) return;
     
     try {
-      const gitignorePath = path.join(this.currentPath, '.gitignore');
+      const gitignorePath = path.join(this.gitRepoRoot, '.gitignore');
       if (fs.existsSync(gitignorePath)) {
         const gitignoreContent = fs.readFileSync(gitignorePath, 'utf8');
         this.gitIgnorePatterns = gitignoreContent
@@ -155,9 +158,9 @@ class FileExplorer {
   }
 
   isFileIgnored(filePath) {
-    if (!this.isGitRepo || this.gitIgnorePatterns.length === 0) return false;
+    if (!this.isGitRepo || !this.gitRepoRoot || this.gitIgnorePatterns.length === 0) return false;
     
-    const relativePath = path.relative(this.currentPath, filePath);
+    const relativePath = path.relative(this.gitRepoRoot, filePath);
     
     return this.gitIgnorePatterns.some(pattern => {
       // Simple pattern matching - could be enhanced with proper glob matching
@@ -495,10 +498,10 @@ class FileExplorer {
   }
 
   watchGitDirectory() {
-    if (!this.isGitRepo) return;
+    if (!this.isGitRepo || !this.gitRepoRoot) return;
 
     try {
-      const gitDir = path.join(this.currentPath, '.git');
+      const gitDir = path.join(this.gitRepoRoot, '.git');
       if (!fs.existsSync(gitDir)) return;
 
       // Watch for changes in .git directory (commits, branch changes, etc.)
