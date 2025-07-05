@@ -137,7 +137,11 @@ body {
   transform: rotate(90deg);
 }
 
-.tree-item.nested {
+.tree-item.nested-0 {
+  padding-left: 8px;
+}
+
+.tree-item.nested-1 {
   padding-left: 24px;
 }
 
