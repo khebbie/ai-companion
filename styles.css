@@ -221,3 +221,17 @@ body {
 .tree-item.editing .inline-input {
   display: block;
 }
+
+.tree-item.permission-denied {
+  opacity: 0.6;
+}
+
+.tree-item.permission-denied .name {
+  font-style: italic;
+}
+
+.permission-icon {
+  margin-left: 4px;
+  font-size: 12px;
+  color: #ffa500;
+}

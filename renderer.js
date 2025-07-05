@@ -2,6 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const { shell } = require('electron');
 
+// Check if permission skipping is enabled
+const skipPermissions = process.argv.includes('--skip-permissions');
+
 // Enable hot reload in development
 if (process.env.NODE_ENV !== 'production') {
   try {
@@ -60,15 +63,32 @@ class FileExplorer {
         if (item.startsWith('.')) continue; // Skip hidden files
         
         const fullPath = path.join(dirPath, item);
-        const stats = fs.statSync(fullPath);
         
-        result.push({
-          name: item,
-          path: fullPath,
-          isDirectory: stats.isDirectory(),
-          size: stats.size,
-          modified: stats.mtime
-        });
+        try {
+          const stats = fs.statSync(fullPath);
+          
+          result.push({
+            name: item,
+            path: fullPath,
+            isDirectory: stats.isDirectory(),
+            size: stats.size,
+            modified: stats.mtime
+          });
+        } catch (statError) {
+          if (skipPermissions) {
+            // When skipping permissions, add item with basic info
+            result.push({
+              name: item,
+              path: fullPath,
+              isDirectory: false, // Default to file if we can't stat
+              size: 0,
+              modified: new Date(),
+              permissionDenied: true
+            });
+          } else {
+            console.error('Permission denied accessing:', fullPath);
+          }
+        }
       }
 
       // Sort: directories first, then files, both alphabetically
@@ -98,6 +118,9 @@ class FileExplorer {
   createTreeItem(item, depth) {
     const div = document.createElement('div');
     div.className = `tree-item ${item.isDirectory ? 'folder' : 'file'} nested-${Math.min(depth, 5)}`;
+    if (item.permissionDenied) {
+      div.className += ' permission-denied';
+    }
     div.dataset.path = item.path;
 
     const icon = this.getIcon(item);
@@ -105,10 +128,13 @@ class FileExplorer {
       `<span class="chevron ${this.expandedFolders.has(item.path) ? 'expanded' : ''}">▶</span>` : 
       '<span class="chevron"></span>';
 
+    const permissionIcon = item.permissionDenied ? '<span class="permission-icon">🔒</span>' : '';
+
     div.innerHTML = `
       ${chevron}
       <span class="icon">${icon}</span>
       <span class="name">${item.name}</span>
+      ${permissionIcon}
     `;
 
     div.addEventListener('click', (e) => this.handleItemClick(e, item));
@@ -398,7 +424,12 @@ class FileExplorer {
           fs.renameSync(currentItem.path, newPath);
           // File watcher will handle the refresh
         } catch (error) {
-          alert(`Error renaming: ${error.message}`);
+          if (skipPermissions) {
+            console.warn(`Permission denied renaming ${currentItem.path}, operation skipped`);
+            alert(`Permission denied: Cannot rename "${currentItem.name}"`);
+          } else {
+            alert(`Error renaming: ${error.message}`);
+          }
         }
       }
       this.cancelRename(element);
@@ -441,13 +472,18 @@ class FileExplorer {
     if (confirm(confirmMessage)) {
       try {
         if (item.isDirectory) {
-          fs.rmSync(item.path, { recursive: true, force: true });
+          fs.rmSync(item.path, { recursive: true, force: skipPermissions });
         } else {
           fs.unlinkSync(item.path);
         }
         // File watcher will handle the refresh
       } catch (error) {
-        alert(`Error deleting: ${error.message}`);
+        if (skipPermissions) {
+          console.warn(`Permission denied deleting ${item.path}, operation skipped`);
+          alert(`Permission denied: Cannot delete "${item.name}"`);
+        } else {
+          alert(`Error deleting: ${error.message}`);
+        }
       }
     }
   }
@@ -460,7 +496,12 @@ class FileExplorer {
         fs.writeFileSync(filePath, '');
         // File watcher will handle the refresh
       } catch (error) {
-        alert(`Error creating file: ${error.message}`);
+        if (skipPermissions) {
+          console.warn(`Permission denied creating file ${filePath}, operation skipped`);
+          alert(`Permission denied: Cannot create file "${name.trim()}"`);
+        } else {
+          alert(`Error creating file: ${error.message}`);
+        }
       }
     }
   }
@@ -473,7 +514,12 @@ class FileExplorer {
         fs.mkdirSync(folderPath);
         // File watcher will handle the refresh
       } catch (error) {
-        alert(`Error creating folder: ${error.message}`);
+        if (skipPermissions) {
+          console.warn(`Permission denied creating folder ${folderPath}, operation skipped`);
+          alert(`Permission denied: Cannot create folder "${name.trim()}"`);
+        } else {
+          alert(`Error creating folder: ${error.message}`);
+        }
       }
     }
   }
