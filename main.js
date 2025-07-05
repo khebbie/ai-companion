@@ -13,6 +13,9 @@ function createWindow() {
     title: 'File Explorer'
   });
 
+  // Hide the menu bar
+  mainWindow.setMenuBarVisibility(false);
+
   mainWindow.loadFile('index.html');
 }
 
