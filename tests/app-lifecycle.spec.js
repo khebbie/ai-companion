@@ -80,10 +80,17 @@ test.describe('Application Lifecycle and Window Management', () => {
     const window = await electronApp.launch();
     await electronApp.waitForFileTree();
     
-    // Window should have loaded with some default or saved state
-    const viewport = window.viewportSize();
-    expect(viewport.width).toBeGreaterThan(0);
-    expect(viewport.height).toBeGreaterThan(0);
+    // Window should have loaded successfully (which implies state persistence works)
+    await expect(window.locator('body')).toBeVisible();
+    
+    // Check window has reasonable dimensions
+    const windowSize = await window.evaluate(() => ({
+      width: window.innerWidth,
+      height: window.innerHeight
+    }));
+    
+    expect(windowSize.width).toBeGreaterThan(200);
+    expect(windowSize.height).toBeGreaterThan(300);
     
     // The window state persistence is mainly tested by ensuring
     // the app launches successfully, which implies state loading worked

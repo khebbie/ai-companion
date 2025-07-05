@@ -31,7 +31,7 @@ test.describe('Command Line Arguments and Permission Handling', () => {
     
     // App should still function normally
     await expect(window.locator('.file-tree')).toBeVisible();
-    await expect(window.locator('.tree-item')).toBeVisible();
+    await expect(window.locator('.tree-item').first()).toBeVisible();
     
     // This test verifies the flag doesn't break normal operation
     // The actual permission bypassing would be tested with restricted directories
@@ -76,7 +76,7 @@ test.describe('Command Line Arguments and Permission Handling', () => {
     
     // App should function with multiple flags
     await expect(window.locator('.file-tree')).toBeVisible();
-    await expect(window.locator('.tree-item')).toBeVisible();
+    await expect(window.locator('.tree-item').first()).toBeVisible();
   });
 
   test('should prioritize first non-flag argument as directory', async () => {
