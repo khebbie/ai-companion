@@ -41,6 +41,7 @@ class FileExplorer {
     this.selectedItem = null;
     this.focusedItem = null;
     this.visibleItems = [];
+    this.showHiddenFiles = false;
     this.gitStatus = new Map();
     this.gitIgnorePatterns = [];
     this.isGitRepo = false;
@@ -191,16 +192,18 @@ class FileExplorer {
       const result = [];
 
       for (const item of items) {
-        if (item.startsWith('.')) continue; // Skip hidden files
-        
         const fullPath = path.join(dirPath, item);
+        const isHiddenFile = item.startsWith('.');
+        const isIgnored = this.isFileIgnored(fullPath);
+        
+        // Skip hidden files and gitignored files unless toggle is on
+        if ((isHiddenFile || isIgnored) && !this.showHiddenFiles) continue;
         
         try {
           const stats = fs.statSync(fullPath);
           
           // Get git status for this file
           const gitStatus = this.gitStatus.get(fullPath) || '';
-          const isIgnored = this.isFileIgnored(fullPath);
           
           result.push({
             name: item,
@@ -209,7 +212,8 @@ class FileExplorer {
             size: stats.size,
             modified: stats.mtime,
             gitStatus: gitStatus,
-            isIgnored: isIgnored
+            isIgnored: isIgnored,
+            isHiddenFile: isHiddenFile
           });
         } catch (statError) {
           if (skipPermissions) {
@@ -222,7 +226,8 @@ class FileExplorer {
               modified: new Date(),
               permissionDenied: true,
               gitStatus: '',
-              isIgnored: false
+              isIgnored: isIgnored,
+              isHiddenFile: isHiddenFile
             });
           } else {
             console.error('Permission denied accessing:', fullPath);
@@ -259,6 +264,14 @@ class FileExplorer {
     const div = document.createElement('div');
     div.className = `tree-item ${item.isDirectory ? 'folder' : 'file'} nested-${Math.min(depth, 5)}`;
     
+    // Add classes for hidden files and gitignored files
+    if (item.isHiddenFile) {
+      div.className += ' hidden-file';
+    }
+    if (item.isIgnored) {
+      div.className += ' gitignored-file';
+    }
+    
     // Add git status classes
     if (item.gitStatus) {
       const status = item.gitStatus.trim();
@@ -271,10 +284,6 @@ class FileExplorer {
     
     if (item.permissionDenied) {
       div.className += ' permission-denied';
-    }
-    
-    if (item.isIgnored) {
-      div.className += ' git-ignored';
     }
     
     div.dataset.path = item.path;
@@ -813,6 +822,9 @@ class FileExplorer {
           !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
         this.handleKeyboardNavigation(e);
       }
+      
+      // Handle global shortcuts that work regardless of focus
+      this.handleGlobalShortcuts(e);
     });
     
     // Handle focus events
@@ -970,6 +982,46 @@ class FileExplorer {
     
     element.classList.add('selected');
     this.selectedItem = item;
+  }
+
+  handleGlobalShortcuts(e) {
+    // Handle Ctrl+H for toggling hidden files
+    if (e.ctrlKey && e.key === 'h') {
+      e.preventDefault();
+      this.toggleHiddenFiles();
+    }
+  }
+
+  toggleHiddenFiles() {
+    this.showHiddenFiles = !this.showHiddenFiles;
+    console.log(`Hidden & ignored files ${this.showHiddenFiles ? 'shown' : 'hidden'}`);
+    
+    // Update the header to show current state
+    this.updateHiddenFilesIndicator();
+    
+    // Refresh the file tree to show/hide hidden files
+    this.refresh();
+  }
+
+  updateHiddenFilesIndicator() {
+    // Find or create the hidden files indicator
+    let indicator = document.getElementById('hidden-files-indicator');
+    if (!indicator) {
+      indicator = document.createElement('span');
+      indicator.id = 'hidden-files-indicator';
+      indicator.className = 'hidden-files-indicator';
+      
+      // Add to header next to branch info
+      const headerRight = document.querySelector('.header-right');
+      headerRight.insertBefore(indicator, headerRight.firstChild);
+    }
+    
+    if (this.showHiddenFiles) {
+      indicator.textContent = 'Show Hidden & Ignored';
+      indicator.style.display = 'inline-block';
+    } else {
+      indicator.style.display = 'none';
+    }
   }
 
   updateFocusAfterRefresh() {

@@ -321,14 +321,6 @@ body {
   color: #2196f3;
 }
 
-.tree-item.git-ignored {
-  opacity: 0.4;
-}
-
-.tree-item.git-ignored .name {
-  font-style: italic;
-  color: #6c6c6c;
-}
 
 .branch-info {
   font-size: 11px;
@@ -343,4 +335,63 @@ body {
 .branch-info::before {
   content: "⚡ ";
   color: #ffa500;
+}
+
+.hidden-files-indicator {
+  font-size: 11px;
+  color: #ffa500;
+  font-weight: 500;
+  background-color: #1e1e1e;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #3e3e42;
+  margin-right: 8px;
+}
+
+.hidden-files-indicator::before {
+  content: "👁️ ";
+  margin-right: 2px;
+}
+
+/* Styling for hidden files (starting with .) when shown */
+.tree-item.hidden-file {
+  opacity: 0.7;
+}
+
+.tree-item.hidden-file .name {
+  font-style: italic;
+  color: #9D9D9D;
+}
+
+.tree-item.hidden-file::before {
+  content: "∙ ";
+  color: #569cd6;
+  font-weight: bold;
+  margin-right: 2px;
+}
+
+/* Styling for gitignored files when shown */
+.tree-item.gitignored-file {
+  opacity: 0.5;
+}
+
+.tree-item.gitignored-file .name {
+  font-style: italic;
+  color: #6c6c6c;
+  text-decoration: line-through;
+}
+
+.tree-item.gitignored-file::before {
+  content: "⚠ ";
+  color: #ffa500;
+  font-size: 10px;
+  margin-right: 2px;
+}
+
+/* Files that are both hidden and gitignored */
+.tree-item.hidden-file.gitignored-file::before {
+  content: "∙⚠ ";
+  color: #ffa500;
+  font-weight: bold;
+  margin-right: 2px;
 }
