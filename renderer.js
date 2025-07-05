@@ -6,6 +6,16 @@ const { execSync } = require('child_process');
 // Check if permission skipping is enabled
 const skipPermissions = process.argv.includes('--skip-permissions');
 
+// Get initial directory from command line arguments
+function getInitialDirectory() {
+  const args = process.argv;
+  const initialDirIndex = args.indexOf('--initial-directory');
+  if (initialDirIndex !== -1 && initialDirIndex + 1 < args.length) {
+    return args[initialDirIndex + 1];
+  }
+  return process.cwd();
+}
+
 // Enable hot reload in development
 if (process.env.NODE_ENV !== 'production') {
   try {
@@ -20,7 +30,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 class FileExplorer {
   constructor() {
-    this.currentPath = process.cwd();
+    this.currentPath = getInitialDirectory();
     this.expandedFolders = new Set();
     this.fileTree = document.getElementById('file-tree');
     this.refreshBtn = document.getElementById('refresh-btn');

@@ -2,6 +2,9 @@
   "name": "ai-companion",
   "version": "1.0.0",
   "main": "main.js",
+  "bin": {
+    "ai-companion": "./main.js"
+  },
   "scripts": {
     "start": "electron .",
     "dev": "nodemon --exec \"electron . --no-sandbox\" --ext js,html,css",

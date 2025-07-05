@@ -37,7 +37,7 @@ AI Companion is coded 100% by Claude Code.
 - Node.js (v14 or higher)
 - npm or yarn
 
-### Setup
+### Method 1: Global Installation (Recommended)
 ```bash
 # Clone the repository
 git clone <repository-url>
@@ -46,29 +46,87 @@ cd ai-companion
 # Install dependencies
 npm install
 
-# Start the application
+# Install globally for system-wide access
+npm install -g .
+
+# Now you can run from anywhere
+ai-companion
+ai-companion /path/to/your/project
+ai-companion ~/Documents/code
+```
+
+### Method 2: Local Development Setup
+```bash
+# Clone the repository
+git clone <repository-url>
+cd ai-companion
+
+# Install dependencies
+npm install
+
+# Start the application (current directory)
 npm start
+
+# Start with specific directory
+npm start /path/to/project
 
 # For development with hot reload
 npm run dev
 ```
 
+### Method 3: Direct Execution
+```bash
+# After installing dependencies
+chmod +x main.js
+
+# Run directly with electron (if globally installed)
+./main.js /path/to/project
+```
+
 ## Usage
 
-### Basic Commands
+### Global Installation Usage (Recommended)
 ```bash
-# Start normally
-npm start
+# Start in current directory
+ai-companion
 
-# Start with sandbox disabled (if needed)
-npm start -- --no-sandbox
+# Start in specific directory
+ai-companion /path/to/project
+ai-companion ~/Documents/code
+ai-companion .
 
 # Start with permission bypass for restricted files
-npm start -- --dangerously-skip-permissions --no-sandbox
+ai-companion /path/to/project --dangerously-skip-permissions
+
+# Start with specific flags
+ai-companion ~/project --no-sandbox --dangerously-skip-permissions
+```
+
+### Local Development Usage
+```bash
+# Start in current directory
+npm start
+
+# Start in specific directory
+npm start /path/to/project
+
+# Start with sandbox disabled (if needed)
+npm start /path/to/project -- --no-sandbox
+
+# Start with permission bypass for restricted files
+npm start /path/to/project -- --dangerously-skip-permissions --no-sandbox
 
 # Development mode with hot reload
 npm run dev
 ```
+
+### Command Line Arguments
+- **Directory Path**: First argument specifies the working directory
+  - `ai-companion /home/user/project`
+  - `ai-companion ~/Documents/code`
+  - `ai-companion .` (current directory)
+- **--dangerously-skip-permissions**: Bypass file permission errors
+- **--no-sandbox**: Disable Electron sandbox (may be needed on some systems)
 
 ### Features Guide
 
@@ -86,8 +144,15 @@ npm run dev
 
 #### Permission Handling
 Use the `--dangerously-skip-permissions` flag to view files even when permission is denied:
+
+**Global Installation:**
 ```bash
-npm start -- --dangerously-skip-permissions --no-sandbox
+ai-companion /restricted/path --dangerously-skip-permissions
+```
+
+**Local Development:**
+```bash
+npm start /restricted/path -- --dangerously-skip-permissions --no-sandbox
 ```
 
 ## Configuration

@@ -1,3 +1,4 @@
+#!/usr/bin/env electron
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const fs = require('fs');
@@ -6,6 +7,25 @@ const os = require('os');
 // Parse command line arguments
 const args = process.argv.slice(2);
 const skipPermissions = args.includes('--dangerously-skip-permissions');
+
+// Parse working directory argument (first non-flag argument)
+let initialWorkingDirectory = process.cwd();
+for (const arg of args) {
+  if (!arg.startsWith('--')) {
+    // This is a directory path argument
+    const resolvedPath = path.resolve(arg);
+    try {
+      if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isDirectory()) {
+        initialWorkingDirectory = resolvedPath;
+        break;
+      } else {
+        console.warn(`Warning: Directory "${arg}" does not exist or is not a directory. Using current directory.`);
+      }
+    } catch (error) {
+      console.warn(`Warning: Cannot access directory "${arg}". Using current directory.`);
+    }
+  }
+}
 
 // Path to store window state
 const windowStateFile = path.join(os.homedir(), '.file-explorer-window-state.json');
@@ -51,7 +71,10 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      additionalArguments: skipPermissions ? ['--skip-permissions'] : []
+      additionalArguments: [
+        ...(skipPermissions ? ['--skip-permissions'] : []),
+        '--initial-directory', initialWorkingDirectory
+      ]
     },
     resizable: true,
     title: 'AI Companion'
