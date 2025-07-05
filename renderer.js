@@ -39,6 +39,8 @@ class FileExplorer {
     this.branchInfo = document.getElementById('branch-info');
     this.watchers = new Map();
     this.selectedItem = null;
+    this.focusedItem = null;
+    this.visibleItems = [];
     this.gitStatus = new Map();
     this.gitIgnorePatterns = [];
     this.isGitRepo = false;
@@ -55,13 +57,16 @@ class FileExplorer {
     this.loadFileTree();
     this.setupFileWatcher();
     this.setupContextMenu();
+    this.setupKeyboardNavigation();
   }
 
   refresh() {
     this.fileTree.innerHTML = '';
+    this.visibleItems = [];
     this.checkGitRepository();
     this.updateBreadcrumb();
     this.loadFileTree();
+    this.updateFocusAfterRefresh();
   }
 
   checkGitRepository() {
@@ -241,6 +246,7 @@ class FileExplorer {
     for (const item of items) {
       const element = this.createTreeItem(item, depth);
       this.fileTree.appendChild(element);
+      this.visibleItems.push({ item, element });
 
       if (item.isDirectory && this.expandedFolders.has(item.path)) {
         const childItems = this.getDirectoryContents(item.path);
@@ -763,6 +769,206 @@ class FileExplorer {
 
   revealInFileManager(item) {
     shell.showItemInFolder(item.path);
+  }
+
+  setupKeyboardNavigation() {
+    // Make the file tree focusable
+    this.fileTree.setAttribute('tabindex', '0');
+    
+    // Focus the file tree on page load
+    this.fileTree.focus();
+    
+    document.addEventListener('keydown', (e) => {
+      // Only handle navigation if file tree is focused or no other input is active
+      if (document.activeElement !== this.fileTree && 
+          !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        // Auto-focus file tree for navigation keys
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'j', 'k', 'h', 'l', 'Enter', ' '].includes(e.key)) {
+          this.fileTree.focus();
+        }
+      }
+      
+      if (document.activeElement === this.fileTree || 
+          !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        this.handleKeyboardNavigation(e);
+      }
+    });
+    
+    // Handle focus events
+    this.fileTree.addEventListener('focus', () => {
+      if (!this.focusedItem && this.visibleItems.length > 0) {
+        this.setFocusedItem(0);
+      }
+    });
+  }
+
+  handleKeyboardNavigation(e) {
+    if (this.visibleItems.length === 0) return;
+    
+    const currentIndex = this.getCurrentFocusIndex();
+    
+    switch (e.key) {
+      case 'ArrowUp':
+      case 'k':
+        e.preventDefault();
+        this.navigateUp(currentIndex);
+        break;
+        
+      case 'ArrowDown':
+      case 'j':
+        e.preventDefault();
+        this.navigateDown(currentIndex);
+        break;
+        
+      case 'ArrowLeft':
+      case 'h':
+        e.preventDefault();
+        this.navigateLeft(currentIndex);
+        break;
+        
+      case 'ArrowRight':
+      case 'l':
+        e.preventDefault();
+        this.navigateRight(currentIndex);
+        break;
+        
+      case 'Enter':
+        e.preventDefault();
+        this.handleEnterKey(currentIndex);
+        break;
+        
+      case ' ':
+        e.preventDefault();
+        this.handleSpaceKey(currentIndex);
+        break;
+    }
+  }
+
+  getCurrentFocusIndex() {
+    if (!this.focusedItem) return 0;
+    
+    return this.visibleItems.findIndex(({ item }) => 
+      item.path === this.focusedItem.path
+    );
+  }
+
+  setFocusedItem(index) {
+    // Remove previous focus
+    if (this.focusedItem) {
+      const prevElement = document.querySelector(`[data-path="${this.focusedItem.path}"]`);
+      if (prevElement) {
+        prevElement.classList.remove('keyboard-focused');
+      }
+    }
+    
+    // Set new focus
+    if (index >= 0 && index < this.visibleItems.length) {
+      this.focusedItem = this.visibleItems[index].item;
+      const element = this.visibleItems[index].element;
+      element.classList.add('keyboard-focused');
+      
+      // Scroll into view if needed
+      element.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  navigateUp(currentIndex) {
+    if (currentIndex > 0) {
+      this.setFocusedItem(currentIndex - 1);
+    }
+  }
+
+  navigateDown(currentIndex) {
+    if (currentIndex < this.visibleItems.length - 1) {
+      this.setFocusedItem(currentIndex + 1);
+    }
+  }
+
+  navigateLeft(currentIndex) {
+    if (currentIndex === -1) return;
+    
+    const { item } = this.visibleItems[currentIndex];
+    
+    if (item.isDirectory && this.expandedFolders.has(item.path)) {
+      // Collapse the folder
+      this.toggleFolder(item.path);
+    } else {
+      // Navigate to parent directory (find parent in visible items)
+      const parentPath = path.dirname(item.path);
+      const parentIndex = this.visibleItems.findIndex(({ item: parentItem }) => 
+        parentItem.path === parentPath && parentItem.isDirectory
+      );
+      
+      if (parentIndex !== -1) {
+        this.setFocusedItem(parentIndex);
+      }
+    }
+  }
+
+  navigateRight(currentIndex) {
+    if (currentIndex === -1) return;
+    
+    const { item } = this.visibleItems[currentIndex];
+    
+    if (item.isDirectory) {
+      if (!this.expandedFolders.has(item.path)) {
+        // Expand the folder
+        this.toggleFolder(item.path);
+      } else {
+        // Navigate to first child if expanded
+        const nextIndex = currentIndex + 1;
+        if (nextIndex < this.visibleItems.length) {
+          this.setFocusedItem(nextIndex);
+        }
+      }
+    }
+  }
+
+  handleEnterKey(currentIndex) {
+    if (currentIndex === -1) return;
+    
+    const { item } = this.visibleItems[currentIndex];
+    
+    if (item.isDirectory) {
+      this.toggleFolder(item.path);
+    } else {
+      // Open file with default application
+      shell.openPath(item.path);
+    }
+  }
+
+  handleSpaceKey(currentIndex) {
+    if (currentIndex === -1) return;
+    
+    const { item, element } = this.visibleItems[currentIndex];
+    
+    // Toggle selection (same as click behavior)
+    document.querySelectorAll('.tree-item.selected').forEach(el => {
+      el.classList.remove('selected');
+    });
+    
+    element.classList.add('selected');
+    this.selectedItem = item;
+  }
+
+  updateFocusAfterRefresh() {
+    // Try to maintain focus on the same item after refresh
+    if (this.focusedItem) {
+      const newIndex = this.visibleItems.findIndex(({ item }) => 
+        item.path === this.focusedItem.path
+      );
+      
+      if (newIndex !== -1) {
+        this.setFocusedItem(newIndex);
+      } else {
+        // Item no longer exists, focus first item
+        if (this.visibleItems.length > 0) {
+          this.setFocusedItem(0);
+        } else {
+          this.focusedItem = null;
+        }
+      }
+    }
   }
 
   cleanup() {
