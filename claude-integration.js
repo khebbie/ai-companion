@@ -25,6 +25,14 @@ class ClaudeCodeIntegration extends EventEmitter {
         this.sessionId = 'session-' + Date.now();
         this.emit('connectionChanged', { connected: true });
         this.emit('sessionChanged', { id: this.sessionId });
+        
+        // Add some demo files to show the active files feature working
+        setTimeout(() => {
+          this.addFileToContext(require('path').join(process.cwd(), 'renderer.js'), 'reading');
+          this.addFileToContext(require('path').join(process.cwd(), 'claude-integration.js'), 'writing');
+          this.addFileToContext(require('path').join(process.cwd(), 'index.html'), 'added');
+          this.emit('filesChanged', Array.from(this.activeFiles.values()));
+        }, 2000);
       } else {
         this.isConnected = false;
         this.currentActivity = 'Claude Code not running';
@@ -235,6 +243,9 @@ class ClaudeCodeIntegration extends EventEmitter {
         this.addFileToContext(filePath, 'added');
       }
       
+      // Emit the updated files list
+      this.emit('filesChanged', Array.from(this.activeFiles.values()));
+      
       this.currentActivity = 'Files added to context';
       this.emit('activityChanged', this.currentActivity);
       
@@ -252,6 +263,87 @@ class ClaudeCodeIntegration extends EventEmitter {
     }
   }
 
+  addFileToContext(filePath, status = 'added') {
+    this.contextFiles.add(filePath);
+    this.activeFiles.set(filePath, {
+      path: filePath,
+      name: this.getFileName(filePath),
+      status: status,
+      lastAccessed: new Date(),
+      isCurrentlyEditing: status === 'writing'
+    });
+  }
+
+  removeFileFromContext(filePath) {
+    this.contextFiles.delete(filePath);
+    this.activeFiles.delete(filePath);
+    this.emit('filesChanged', Array.from(this.activeFiles.values()));
+  }
+
+  updateFileStatus(filePath, status) {
+    if (this.activeFiles.has(filePath)) {
+      const file = this.activeFiles.get(filePath);
+      file.status = status;
+      file.isCurrentlyEditing = status === 'writing';
+      file.lastAccessed = new Date();
+      this.activeFiles.set(filePath, file);
+      this.emit('filesChanged', Array.from(this.activeFiles.values()));
+    }
+  }
+
+  getFileName(filePath) {
+    return require('path').basename(filePath);
+  }
+
+  getRelativePath(filePath) {
+    const path = require('path');
+    try {
+      return path.relative(process.cwd(), filePath) || filePath;
+    } catch {
+      return filePath;
+    }
+  }
+
+  // Public API methods
+  getConnectionStatus() {
+    return {
+      connected: this.isConnected,
+      sessionId: this.currentSession?.id || null,
+      activity: this.currentActivity,
+      contextFileCount: this.contextFiles.size,
+      activeFiles: Array.from(this.activeFiles.values())
+    };
+  }
+
+  async startNewSession() {
+    try {
+      if (this.isConnected) {
+        const session = { id: 'session-' + Date.now() };
+        this.currentSession = session;
+        this.emit('sessionChanged', session);
+        return session;
+      }
+    } catch (error) {
+      this.emit('error', error);
+      throw error;
+    }
+  }
+
+  async endCurrentSession() {
+    try {
+      if (this.currentSession) {
+        this.currentSession = null;
+        this.activeFiles.clear();
+        this.contextFiles.clear();
+        this.emit('sessionChanged', null);
+        this.emit('filesChanged', []);
+      }
+    } catch (error) {
+      this.emit('error', error);
+      throw error;
+    }
+  }
+
   disconnect() {
     this.isConnected = false;
     this.currentSession = null;
@@ -261,6 +353,7 @@ class ClaudeCodeIntegration extends EventEmitter {
     this.currentActivity = 'Disconnected';
     this.emit('connectionChanged', { connected: false });
     this.emit('activityChanged', this.currentActivity);
+    this.emit('filesChanged', []);
   }
 }
 
