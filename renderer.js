@@ -1317,7 +1317,7 @@ class FileExplorer {
       option.selected = session.isActive;
       
       const timeAgo = this.getTimeAgo(session.startTime);
-      option.textContent = `${session.name} (${session.projectName}) - ${timeAgo}`;
+      option.textContent = `📁 ${session.projectName} - ${timeAgo}`;
       
       this.sessionDropdown.appendChild(option);
     });

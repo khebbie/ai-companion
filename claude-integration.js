@@ -93,15 +93,15 @@ class ClaudeCodeIntegration extends EventEmitter {
       {
         id: 'session-backend-' + (Date.now() + 1),
         name: 'Backend Session',
-        workingDir: '/path/to/backend',
-        projectName: 'backend-api',
+        workingDir: '/Users/dev/projects/backend',
+        projectName: 'backend',
         startTime: new Date(Date.now() - 300000), // 5 mins ago
         isActive: false
       },
       {
         id: 'session-frontend-' + (Date.now() + 2),
         name: 'Frontend Session', 
-        workingDir: '/path/to/frontend',
+        workingDir: '/Users/dev/projects/react-app',
         projectName: 'react-app',
         startTime: new Date(Date.now() - 600000), // 10 mins ago
         isActive: false
@@ -137,7 +137,7 @@ class ClaudeCodeIntegration extends EventEmitter {
       this.activeFiles.clear();
       this.contextFiles.clear();
       
-      this.currentActivity = `Switched to ${session.name}`;
+      this.currentActivity = `Switched to ${session.projectName}`;
       this.emit('sessionChanged', session);
       this.emit('sessionsDiscovered', Array.from(this.availableSessions.values()));
       this.emit('activityChanged', this.currentActivity);
@@ -156,31 +156,31 @@ class ClaudeCodeIntegration extends EventEmitter {
   loadSessionFiles(session) {
     // Simulate loading different files for different sessions
     const sessionFiles = {
-      'Main Session': [
+      'explore': [
         { name: 'renderer.js', status: 'reading' },
         { name: 'claude-integration.js', status: 'writing' },
         { name: 'index.html', status: 'added' }
       ],
-      'Backend Session': [
+      'backend': [
         { name: 'server.js', status: 'writing' },
         { name: 'database.js', status: 'reading' },
         { name: 'api.js', status: 'added' }
       ],
-      'Frontend Session': [
+      'react-app': [
         { name: 'App.jsx', status: 'writing' },
         { name: 'components/Header.jsx', status: 'reading' },
         { name: 'styles/main.css', status: 'added' }
       ]
     };
     
-    const files = sessionFiles[session.name] || [];
+    const files = sessionFiles[session.projectName] || [];
     files.forEach(file => {
       const fullPath = require('path').join(session.workingDir, file.name);
       this.addFileToContext(fullPath, file.status);
     });
     
     this.emit('filesChanged', Array.from(this.activeFiles.values()));
-    this.currentActivity = `Loaded ${files.length} files for ${session.name}`;
+    this.currentActivity = `Loaded ${files.length} files for ${session.projectName}`;
     this.emit('activityChanged', this.currentActivity);
   }
 
