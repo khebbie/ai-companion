@@ -1004,14 +1004,17 @@ class FileExplorer {
   }
 
   handleGlobalShortcuts(e) {
-    // Handle Ctrl+H for toggling hidden files
-    if (e.ctrlKey && e.key === 'h') {
+    // Use Command key on Mac, Ctrl on Windows/Linux
+    const modifierKey = process.platform === 'darwin' ? e.metaKey : e.ctrlKey;
+    
+    // Handle Cmd/Ctrl+H for toggling hidden files
+    if (modifierKey && e.key === 'h') {
       e.preventDefault();
       this.toggleHiddenFiles();
     }
     
-    // Handle Ctrl+D for toggling details view
-    if (e.ctrlKey && e.key === 'd') {
+    // Handle Cmd/Ctrl+D for toggling details view
+    if (modifierKey && e.key === 'd') {
       e.preventDefault();
       this.toggleDetailsView();
     }
