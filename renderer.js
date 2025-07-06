@@ -59,6 +59,8 @@ class FileExplorer {
     this.contextFiles = document.getElementById('context-files');
     this.activeFilesList = document.getElementById('active-files-list');
     this.claudeConnectBtn = document.getElementById('claude-connect-btn');
+    this.sessionDropdown = document.getElementById('session-dropdown');
+    this.sessionProject = document.getElementById('session-project');
     
     // Initialize Claude Code integration
     this.claudeIntegration = new ClaudeCodeIntegration();
@@ -67,7 +69,9 @@ class FileExplorer {
       sessionId: null,
       activity: 'Idle',
       activeFiles: [],
-      contextFileCount: 0
+      contextFileCount: 0,
+      availableSessions: [],
+      currentSession: null
     };
     
     this.init();
@@ -1197,7 +1201,21 @@ class FileExplorer {
     
     this.claudeIntegration.on('sessionChanged', (session) => {
       this.claudeSession.sessionId = session ? session.id : null;
+      this.claudeSession.currentSession = session;
       this.updateClaudePanel();
+    });
+    
+    this.claudeIntegration.on('sessionsDiscovered', (sessions) => {
+      this.claudeSession.availableSessions = sessions;
+      this.updateSessionDropdown();
+    });
+    
+    // Handle session dropdown changes
+    this.sessionDropdown.addEventListener('change', (e) => {
+      const sessionId = e.target.value;
+      if (sessionId) {
+        this.claudeIntegration.switchToSession(sessionId);
+      }
     });
     
     this.claudeIntegration.on('activityChanged', (activity) => {
@@ -1237,7 +1255,9 @@ class FileExplorer {
     }
     
     // Update session info
-    this.sessionId.textContent = this.claudeSession.sessionId || 'None';
+    this.sessionProject.textContent = this.claudeSession.currentSession 
+      ? this.claudeSession.currentSession.projectName 
+      : 'None';
     this.currentActivity.textContent = this.claudeSession.activity;
     this.contextFiles.textContent = this.claudeSession.contextFileCount;
     
@@ -1277,6 +1297,42 @@ class FileExplorer {
       
       this.activeFilesList.appendChild(item);
     });
+  }
+  
+  updateSessionDropdown() {
+    this.sessionDropdown.innerHTML = '';
+    
+    if (this.claudeSession.availableSessions.length === 0) {
+      const option = document.createElement('option');
+      option.value = '';
+      option.textContent = 'No sessions available';
+      option.disabled = true;
+      this.sessionDropdown.appendChild(option);
+      return;
+    }
+    
+    this.claudeSession.availableSessions.forEach(session => {
+      const option = document.createElement('option');
+      option.value = session.id;
+      option.selected = session.isActive;
+      
+      const timeAgo = this.getTimeAgo(session.startTime);
+      option.textContent = `${session.name} (${session.projectName}) - ${timeAgo}`;
+      
+      this.sessionDropdown.appendChild(option);
+    });
+  }
+  
+  getTimeAgo(date) {
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMinutes / 60);
+    
+    if (diffMinutes < 1) return 'just started';
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return date.toLocaleDateString();
   }
   
   highlightFileInTree(filePath) {

@@ -10,6 +10,8 @@ class ClaudeCodeIntegration extends EventEmitter {
     this.contextFiles = new Set();
     this.currentActivity = 'Idle';
     this.sessionId = null;
+    this.availableSessions = new Map(); // Track multiple sessions
+    this.currentSessionIndex = 0;
     
     this.initialize();
   }
@@ -24,15 +26,22 @@ class ClaudeCodeIntegration extends EventEmitter {
         this.currentActivity = 'Connected to Claude Code';
         this.sessionId = 'session-' + Date.now();
         this.emit('connectionChanged', { connected: true });
-        this.emit('sessionChanged', { id: this.sessionId });
         
-        // Add some demo files to show the active files feature working
-        setTimeout(() => {
-          this.addFileToContext(require('path').join(process.cwd(), 'renderer.js'), 'reading');
-          this.addFileToContext(require('path').join(process.cwd(), 'claude-integration.js'), 'writing');
-          this.addFileToContext(require('path').join(process.cwd(), 'index.html'), 'added');
-          this.emit('filesChanged', Array.from(this.activeFiles.values()));
-        }, 2000);
+        // Discover available sessions
+        await this.discoverSessions();
+        
+        // Set the first session as current
+        const sessions = Array.from(this.availableSessions.values());
+        if (sessions.length > 0) {
+          this.currentSession = sessions[0];
+          this.sessionId = this.currentSession.id;
+          this.emit('sessionChanged', this.currentSession);
+          
+          // Load files for the current session
+          setTimeout(() => {
+            this.loadSessionFiles(this.currentSession);
+          }, 1000);
+        }
       } else {
         this.isConnected = false;
         this.currentActivity = 'Claude Code not running';
@@ -64,6 +73,123 @@ class ClaudeCodeIntegration extends EventEmitter {
       // Expected when not running under Claude Code
       return false;
     }
+  }
+
+  async discoverSessions() {
+    // This would discover available Claude Code sessions
+    // For now, we'll simulate multiple sessions for demonstration
+    const sessions = new Map();
+    
+    // Simulate finding multiple sessions
+    const mockSessions = [
+      {
+        id: 'session-main-' + Date.now(),
+        name: 'Main Session',
+        workingDir: process.cwd(),
+        projectName: require('path').basename(process.cwd()),
+        startTime: new Date(),
+        isActive: true
+      },
+      {
+        id: 'session-backend-' + (Date.now() + 1),
+        name: 'Backend Session',
+        workingDir: '/path/to/backend',
+        projectName: 'backend-api',
+        startTime: new Date(Date.now() - 300000), // 5 mins ago
+        isActive: false
+      },
+      {
+        id: 'session-frontend-' + (Date.now() + 2),
+        name: 'Frontend Session', 
+        workingDir: '/path/to/frontend',
+        projectName: 'react-app',
+        startTime: new Date(Date.now() - 600000), // 10 mins ago
+        isActive: false
+      }
+    ];
+    
+    mockSessions.forEach(session => {
+      sessions.set(session.id, session);
+    });
+    
+    this.availableSessions = sessions;
+    this.emit('sessionsDiscovered', Array.from(sessions.values()));
+    
+    return sessions;
+  }
+
+  switchToSession(sessionId) {
+    const session = this.availableSessions.get(sessionId);
+    if (session) {
+      // Mark previous session as inactive
+      if (this.currentSession) {
+        this.currentSession.isActive = false;
+        this.availableSessions.set(this.currentSession.id, this.currentSession);
+      }
+      
+      // Switch to new session
+      session.isActive = true;
+      this.currentSession = session;
+      this.sessionId = sessionId;
+      this.availableSessions.set(sessionId, session);
+      
+      // Clear previous session's context
+      this.activeFiles.clear();
+      this.contextFiles.clear();
+      
+      this.currentActivity = `Switched to ${session.name}`;
+      this.emit('sessionChanged', session);
+      this.emit('sessionsDiscovered', Array.from(this.availableSessions.values()));
+      this.emit('activityChanged', this.currentActivity);
+      this.emit('filesChanged', []);
+      
+      // Load files for this session (simulated)
+      setTimeout(() => {
+        this.loadSessionFiles(session);
+      }, 1000);
+      
+      return true;
+    }
+    return false;
+  }
+
+  loadSessionFiles(session) {
+    // Simulate loading different files for different sessions
+    const sessionFiles = {
+      'Main Session': [
+        { name: 'renderer.js', status: 'reading' },
+        { name: 'claude-integration.js', status: 'writing' },
+        { name: 'index.html', status: 'added' }
+      ],
+      'Backend Session': [
+        { name: 'server.js', status: 'writing' },
+        { name: 'database.js', status: 'reading' },
+        { name: 'api.js', status: 'added' }
+      ],
+      'Frontend Session': [
+        { name: 'App.jsx', status: 'writing' },
+        { name: 'components/Header.jsx', status: 'reading' },
+        { name: 'styles/main.css', status: 'added' }
+      ]
+    };
+    
+    const files = sessionFiles[session.name] || [];
+    files.forEach(file => {
+      const fullPath = require('path').join(session.workingDir, file.name);
+      this.addFileToContext(fullPath, file.status);
+    });
+    
+    this.emit('filesChanged', Array.from(this.activeFiles.values()));
+    this.currentActivity = `Loaded ${files.length} files for ${session.name}`;
+    this.emit('activityChanged', this.currentActivity);
+  }
+
+  getAvailableSessions() {
+    return Array.from(this.availableSessions.values());
+  }
+
+  getCurrentSession() {
+    return this.currentSession;
   }
 
   async checkExistingSession() {

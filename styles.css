@@ -575,6 +575,40 @@ body {
   background-color: #005a9e;
 }
 
+.claude-session-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.session-selector-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: #569cd6;
+  text-transform: uppercase;
+}
+
+.session-dropdown {
+  background-color: #1e1e1e;
+  color: #cccccc;
+  border: 1px solid #3e3e42;
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+}
+
+.session-dropdown:focus {
+  border-color: #569cd6;
+}
+
+.session-dropdown option {
+  background-color: #1e1e1e;
+  color: #cccccc;
+}
+
 .claude-session-info {
   display: flex;
   flex-direction: column;

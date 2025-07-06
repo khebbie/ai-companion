@@ -37,10 +37,17 @@
           <span class="status-text">Checking connection...</span>
           <button id="claude-connect-btn" class="claude-connect-btn" style="display: none;">Connect</button>
         </div>
+        <div class="claude-session-selector" id="claude-session-selector">
+          <div class="session-selector-header">Session:</div>
+          <select id="session-dropdown" class="session-dropdown">
+            <option value="">No sessions available</option>
+          </select>
+        </div>
+        
         <div class="claude-session-info" id="claude-session-info">
           <div class="session-item">
-            <span class="session-label">Session:</span>
-            <span class="session-value" id="session-id">None</span>
+            <span class="session-label">Project:</span>
+            <span class="session-value" id="session-project">None</span>
           </div>
           <div class="session-item">
             <span class="session-label">Activity:</span>
