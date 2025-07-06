@@ -58,6 +58,7 @@ class FileExplorer {
     this.currentActivity = document.getElementById('current-activity');
     this.contextFiles = document.getElementById('context-files');
     this.activeFilesList = document.getElementById('active-files-list');
+    this.claudeConnectBtn = document.getElementById('claude-connect-btn');
     
     // Initialize Claude Code integration
     this.claudeIntegration = new ClaudeCodeIntegration();
@@ -1175,8 +1176,22 @@ class FileExplorer {
     this.claudeIntegration.on('connectionChanged', (status) => {
       this.claudeSession.connected = status.connected;
       this.updateClaudePanel();
-      if (status.error) {
-        console.error('Claude Code connection error:', status.error);
+      
+      // Show connect button if disconnected
+      if (!status.connected) {
+        this.claudeConnectBtn.style.display = 'inline-block';
+        console.log('Claude Code not connected:', status.error || 'Unknown reason');
+      } else {
+        this.claudeConnectBtn.style.display = 'none';
+      }
+    });
+    
+    // Add connect button handler
+    this.claudeConnectBtn.addEventListener('click', async () => {
+      try {
+        await this.claudeIntegration.initialize();
+      } catch (error) {
+        console.error('Failed to connect to Claude Code:', error);
       }
     });
     
@@ -1215,10 +1230,10 @@ class FileExplorer {
     
     if (this.claudeSession.connected) {
       statusIndicator.className = 'status-indicator connected';
-      statusText.textContent = 'Connected';
+      statusText.textContent = 'Connected to Claude Code';
     } else {
       statusIndicator.className = 'status-indicator disconnected';
-      statusText.textContent = 'Not connected';
+      statusText.textContent = this.claudeSession.activity || 'Not connected';
     }
     
     // Update session info

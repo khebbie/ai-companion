@@ -1,44 +1,60 @@
-const { ClaudeCode } = require('@anthropic-ai/claude-code');
+const { query } = require('@anthropic-ai/claude-code');
 const { EventEmitter } = require('events');
 
 class ClaudeCodeIntegration extends EventEmitter {
   constructor() {
     super();
-    this.claudeCode = null;
     this.isConnected = false;
     this.currentSession = null;
     this.activeFiles = new Map();
     this.contextFiles = new Set();
     this.currentActivity = 'Idle';
+    this.sessionId = null;
     
     this.initialize();
   }
 
   async initialize() {
     try {
-      // Initialize Claude Code SDK
-      this.claudeCode = new ClaudeCode({
-        // Configuration options
-        cwd: process.cwd(),
-        // Event handlers for monitoring Claude's activity
-        onToolUse: (tool) => this.handleToolUse(tool),
-        onFileRead: (file) => this.handleFileRead(file),
-        onFileWrite: (file) => this.handleFileWrite(file),
-        onSessionStart: (session) => this.handleSessionStart(session),
-        onSessionEnd: (session) => this.handleSessionEnd(session),
-        onError: (error) => this.handleError(error)
-      });
+      // Check if we're running inside Claude Code context
+      const isInClaudeContext = await this.checkClaudeContext();
       
-      this.isConnected = true;
-      this.emit('connectionChanged', { connected: true });
+      if (isInClaudeContext) {
+        this.isConnected = true;
+        this.currentActivity = 'Connected to Claude Code';
+        this.sessionId = 'session-' + Date.now();
+        this.emit('connectionChanged', { connected: true });
+        this.emit('sessionChanged', { id: this.sessionId });
+      } else {
+        this.isConnected = false;
+        this.currentActivity = 'Claude Code not running';
+        this.emit('connectionChanged', { connected: false, error: 'No active Claude Code session' });
+      }
       
-      // Check for existing session
-      await this.checkExistingSession();
+      this.emit('activityChanged', this.currentActivity);
       
     } catch (error) {
-      console.error('Failed to initialize Claude Code SDK:', error);
+      console.log('Claude Code SDK check failed:', error.message);
       this.isConnected = false;
+      this.currentActivity = 'Connection failed';
       this.emit('connectionChanged', { connected: false, error: error.message });
+      this.emit('activityChanged', this.currentActivity);
+    }
+  }
+
+  async checkClaudeContext() {
+    // The Claude Code SDK query function only works when running in a Claude Code context
+    // For now, we'll assume we're not in that context unless we can prove otherwise
+    try {
+      // Try a simple test - this will likely fail if not in Claude context
+      const response = await query('test connection', { 
+        cwd: process.cwd(),
+        timeout: 2000 
+      });
+      return true; // If we get here, we're in Claude context
+    } catch (error) {
+      // Expected when not running under Claude Code
+      return false;
     }
   }
 
@@ -182,11 +198,26 @@ class ClaudeCodeIntegration extends EventEmitter {
 
   async sendMessage(message) {
     try {
-      if (this.claudeCode) {
-        const response = await this.claudeCode.query(message);
-        return response;
-      }
+      this.currentActivity = 'Processing query...';
+      this.emit('activityChanged', this.currentActivity);
+      
+      const response = await query(message, { 
+        cwd: process.cwd() 
+      });
+      
+      this.currentActivity = 'Query completed';
+      this.emit('activityChanged', this.currentActivity);
+      
+      // Reset to idle after a delay
+      setTimeout(() => {
+        this.currentActivity = 'Idle';
+        this.emit('activityChanged', this.currentActivity);
+      }, 2000);
+      
+      return response;
     } catch (error) {
+      this.currentActivity = 'Query failed';
+      this.emit('activityChanged', this.currentActivity);
       this.emit('error', error);
       throw error;
     }
@@ -195,29 +226,41 @@ class ClaudeCodeIntegration extends EventEmitter {
   // Method to manually add files to Claude's context
   async addFilesToContext(filePaths) {
     try {
-      if (this.claudeCode) {
-        for (const filePath of filePaths) {
-          // This would use Claude Code SDK method to add file to context
-          // await this.claudeCode.addFileToContext(filePath);
-          this.addFileToContext(filePath, 'added');
-        }
+      this.currentActivity = 'Adding files to context...';
+      this.emit('activityChanged', this.currentActivity);
+      
+      for (const filePath of filePaths) {
+        // Since the SDK doesn't have direct context management,
+        // we simulate adding files and could send them in a query
+        this.addFileToContext(filePath, 'added');
       }
+      
+      this.currentActivity = 'Files added to context';
+      this.emit('activityChanged', this.currentActivity);
+      
+      // Reset to idle after a delay
+      setTimeout(() => {
+        this.currentActivity = 'Idle';
+        this.emit('activityChanged', this.currentActivity);
+      }, 2000);
+      
     } catch (error) {
+      this.currentActivity = 'Failed to add files';
+      this.emit('activityChanged', this.currentActivity);
       this.emit('error', error);
       throw error;
     }
   }
 
   disconnect() {
-    if (this.claudeCode) {
-      // Clean up Claude Code connection
-      this.claudeCode = null;
-    }
     this.isConnected = false;
     this.currentSession = null;
+    this.sessionId = null;
     this.activeFiles.clear();
     this.contextFiles.clear();
+    this.currentActivity = 'Disconnected';
     this.emit('connectionChanged', { connected: false });
+    this.emit('activityChanged', this.currentActivity);
   }
 }
 

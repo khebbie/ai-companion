@@ -560,6 +560,21 @@ body {
   font-weight: 500;
 }
 
+.claude-connect-btn {
+  background-color: #007acc;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+
+.claude-connect-btn:hover {
+  background-color: #005a9e;
+}
+
 .claude-session-info {
   display: flex;
   flex-direction: column;
