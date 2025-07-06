@@ -80,37 +80,20 @@ class ClaudeCodeIntegration extends EventEmitter {
     // For now, we'll simulate multiple sessions for demonstration
     const sessions = new Map();
     
-    // Simulate finding multiple sessions
-    const mockSessions = [
-      {
+    // In a real implementation, this would discover actual Claude Code sessions
+    // For now, only add the current session if connected
+    if (this.isConnected) {
+      const currentSession = {
         id: 'session-main-' + Date.now(),
         name: 'Main Session',
         workingDir: process.cwd(),
         projectName: require('path').basename(process.cwd()),
         startTime: new Date(),
         isActive: true
-      },
-      {
-        id: 'session-backend-' + (Date.now() + 1),
-        name: 'Backend Session',
-        workingDir: '/Users/dev/projects/backend',
-        projectName: 'backend',
-        startTime: new Date(Date.now() - 300000), // 5 mins ago
-        isActive: false
-      },
-      {
-        id: 'session-frontend-' + (Date.now() + 2),
-        name: 'Frontend Session', 
-        workingDir: '/Users/dev/projects/react-app',
-        projectName: 'react-app',
-        startTime: new Date(Date.now() - 600000), // 10 mins ago
-        isActive: false
-      }
-    ];
-    
-    mockSessions.forEach(session => {
-      sessions.set(session.id, session);
-    });
+      };
+      
+      sessions.set(currentSession.id, currentSession);
+    }
     
     this.availableSessions = sessions;
     this.emit('sessionsDiscovered', Array.from(sessions.values()));
@@ -154,22 +137,12 @@ class ClaudeCodeIntegration extends EventEmitter {
   }
 
   loadSessionFiles(session) {
-    // Simulate loading different files for different sessions
+    // Simulate loading files for the current session
     const sessionFiles = {
       'explore': [
         { name: 'renderer.js', status: 'reading' },
         { name: 'claude-integration.js', status: 'writing' },
         { name: 'index.html', status: 'added' }
-      ],
-      'backend': [
-        { name: 'server.js', status: 'writing' },
-        { name: 'database.js', status: 'reading' },
-        { name: 'api.js', status: 'added' }
-      ],
-      'react-app': [
-        { name: 'App.jsx', status: 'writing' },
-        { name: 'components/Header.jsx', status: 'reading' },
-        { name: 'styles/main.css', status: 'added' }
       ]
     };
     
