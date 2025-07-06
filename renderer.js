@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { shell, ipcRenderer } = require('electron');
 const { execSync } = require('child_process');
+const ClaudeCodeIntegration = require('./claude-integration');
 
 // Check if permission skipping is enabled
 const skipPermissions = process.argv.includes('--skip-permissions');
@@ -49,6 +50,25 @@ class FileExplorer {
     this.currentBranch = null;
     this.gitRepoRoot = null;
     
+    // Claude Code integration
+    this.claudePanel = document.getElementById('claude-panel');
+    this.claudePanelToggle = document.getElementById('claude-panel-toggle');
+    this.claudeStatus = document.getElementById('claude-status');
+    this.sessionId = document.getElementById('session-id');
+    this.currentActivity = document.getElementById('current-activity');
+    this.contextFiles = document.getElementById('context-files');
+    this.activeFilesList = document.getElementById('active-files-list');
+    
+    // Initialize Claude Code integration
+    this.claudeIntegration = new ClaudeCodeIntegration();
+    this.claudeSession = {
+      connected: false,
+      sessionId: null,
+      activity: 'Idle',
+      activeFiles: [],
+      contextFileCount: 0
+    };
+    
     this.init();
   }
 
@@ -60,6 +80,7 @@ class FileExplorer {
     this.setupFileWatcher();
     this.setupContextMenu();
     this.setupKeyboardNavigation();
+    this.setupClaudePanel();
   }
 
   refresh() {
@@ -629,8 +650,13 @@ class FileExplorer {
     
     if (item) {
       this.addContextMenuSeparator();
+      this.addContextMenuItem('🤖', 'Add to Claude Context', () => this.addFileToClaudeContext(item.path));
       this.addContextMenuItem('📂', 'Reveal in File Manager', () => this.revealInFileManager(item));
       this.addContextMenuItem('🚀', 'Open new AI Companion here', () => this.openNewAICompanion(item));
+    } else {
+      // Context menu for empty space
+      this.addContextMenuSeparator();
+      this.addContextMenuItem('🤖', 'Add Selected Files to Claude', () => this.addSelectedFilesToClaudeContext());
     }
 
     // Position and show menu
@@ -1138,10 +1164,173 @@ class FileExplorer {
     }
   }
 
+  setupClaudePanel() {
+    // Set up Claude panel toggle
+    this.claudePanelToggle.addEventListener('click', () => {
+      this.claudePanel.classList.toggle('collapsed');
+      this.claudePanelToggle.textContent = this.claudePanel.classList.contains('collapsed') ? '+' : '−';
+    });
+    
+    // Set up Claude Code integration event listeners
+    this.claudeIntegration.on('connectionChanged', (status) => {
+      this.claudeSession.connected = status.connected;
+      this.updateClaudePanel();
+      if (status.error) {
+        console.error('Claude Code connection error:', status.error);
+      }
+    });
+    
+    this.claudeIntegration.on('sessionChanged', (session) => {
+      this.claudeSession.sessionId = session ? session.id : null;
+      this.updateClaudePanel();
+    });
+    
+    this.claudeIntegration.on('activityChanged', (activity) => {
+      this.claudeSession.activity = activity;
+      this.updateClaudePanel();
+    });
+    
+    this.claudeIntegration.on('filesChanged', (files) => {
+      this.claudeSession.activeFiles = files;
+      this.claudeSession.contextFileCount = files.length;
+      this.updateClaudePanel();
+      
+      // Highlight files in the tree that Claude is working with
+      this.highlightClaudeFiles(files);
+    });
+    
+    this.claudeIntegration.on('error', (error) => {
+      console.error('Claude Code error:', error);
+      // Could show error in UI
+    });
+    
+    // Initialize Claude panel state
+    this.updateClaudePanel();
+  }
+  
+  updateClaudePanel() {
+    // Update status indicator
+    const statusIndicator = this.claudeStatus.querySelector('.status-indicator');
+    const statusText = this.claudeStatus.querySelector('.status-text');
+    
+    if (this.claudeSession.connected) {
+      statusIndicator.className = 'status-indicator connected';
+      statusText.textContent = 'Connected';
+    } else {
+      statusIndicator.className = 'status-indicator disconnected';
+      statusText.textContent = 'Not connected';
+    }
+    
+    // Update session info
+    this.sessionId.textContent = this.claudeSession.sessionId || 'None';
+    this.currentActivity.textContent = this.claudeSession.activity;
+    this.contextFiles.textContent = this.claudeSession.contextFileCount;
+    
+    // Update active files list
+    this.updateActiveFilesList();
+  }
+  
+  updateActiveFilesList() {
+    this.activeFilesList.innerHTML = '';
+    
+    if (this.claudeSession.activeFiles.length === 0) {
+      const emptyMessage = document.createElement('div');
+      emptyMessage.className = 'active-file-item';
+      emptyMessage.style.opacity = '0.6';
+      emptyMessage.style.fontStyle = 'italic';
+      emptyMessage.innerHTML = `
+        <span class="active-file-icon">💭</span>
+        <span class="active-file-path">No files in context</span>
+      `;
+      this.activeFilesList.appendChild(emptyMessage);
+      return;
+    }
+    
+    this.claudeSession.activeFiles.forEach(file => {
+      const item = document.createElement('div');
+      item.className = `active-file-item ${file.isCurrentlyEditing ? 'currently-editing' : ''}`;
+      item.innerHTML = `
+        <span class="active-file-icon">${this.getIcon({ name: file.name, isDirectory: false })}</span>
+        <span class="active-file-path">${file.path}</span>
+        <span class="active-file-status">${file.status}</span>
+      `;
+      
+      // Add click handler to navigate to file
+      item.addEventListener('click', () => {
+        this.highlightFileInTree(file.path);
+      });
+      
+      this.activeFilesList.appendChild(item);
+    });
+  }
+  
+  highlightFileInTree(filePath) {
+    // Find and highlight the file in the tree
+    const treeItem = document.querySelector(`[data-path="${filePath}"]`);
+    if (treeItem) {
+      // Remove previous selections
+      document.querySelectorAll('.tree-item.selected').forEach(el => {
+        el.classList.remove('selected');
+      });
+      
+      // Add selection to target file
+      treeItem.classList.add('selected');
+      treeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  
+  highlightClaudeFiles(files) {
+    // Remove previous Claude file highlighting
+    document.querySelectorAll('.tree-item.claude-active').forEach(el => {
+      el.classList.remove('claude-active', 'claude-editing');
+    });
+    
+    // Add highlighting for files Claude is working with
+    files.forEach(file => {
+      const treeItem = document.querySelector(`[data-path="${file.path}"]`);
+      if (treeItem) {
+        treeItem.classList.add('claude-active');
+        if (file.isCurrentlyEditing) {
+          treeItem.classList.add('claude-editing');
+        }
+      }
+    });
+  }
+  
+  // Public methods for adding files to Claude context
+  async addFileToClaudeContext(filePath) {
+    try {
+      await this.claudeIntegration.addFilesToContext([filePath]);
+    } catch (error) {
+      console.error('Failed to add file to Claude context:', error);
+    }
+  }
+  
+  async addSelectedFilesToClaudeContext() {
+    try {
+      const selectedFiles = this.getSelectedFiles();
+      if (selectedFiles.length > 0) {
+        await this.claudeIntegration.addFilesToContext(selectedFiles);
+      }
+    } catch (error) {
+      console.error('Failed to add selected files to Claude context:', error);
+    }
+  }
+  
+  getSelectedFiles() {
+    const selectedElements = document.querySelectorAll('.tree-item.selected');
+    return Array.from(selectedElements).map(el => el.dataset.path).filter(Boolean);
+  }
+
   cleanup() {
     // Clean up watchers when the app closes
     this.watchers.forEach(watcher => watcher.close());
     this.watchers.clear();
+    
+    // Clean up Claude integration
+    if (this.claudeIntegration) {
+      this.claudeIntegration.disconnect();
+    }
   }
 }
 

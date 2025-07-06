@@ -447,3 +447,245 @@ body {
 .tree-item .name {
   margin-right: 8px;
 }
+
+/* Claude Code integration panel */
+.claude-panel {
+  border-top: 1px solid #3e3e42;
+  background-color: #252526;
+  min-height: 120px;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.claude-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #2d2d30;
+  border-bottom: 1px solid #3e3e42;
+  min-height: 32px;
+}
+
+.claude-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #cccccc;
+}
+
+.claude-icon {
+  font-size: 14px;
+}
+
+.claude-panel-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.panel-toggle-btn {
+  background: none;
+  border: none;
+  color: #cccccc;
+  cursor: pointer;
+  font-size: 16px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+}
+
+.panel-toggle-btn:hover {
+  background-color: #37373d;
+}
+
+.claude-panel-content {
+  flex: 1;
+  padding: 8px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.claude-panel.collapsed .claude-panel-content {
+  display: none;
+}
+
+.claude-panel.collapsed .panel-toggle-btn {
+  transform: rotate(180deg);
+}
+
+.claude-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #666;
+}
+
+.status-indicator.connected {
+  background-color: #4caf50;
+  box-shadow: 0 0 4px #4caf50;
+}
+
+.status-indicator.disconnected {
+  background-color: #f44336;
+}
+
+.status-indicator.working {
+  background-color: #ffa500;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.status-text {
+  color: #cccccc;
+  font-weight: 500;
+}
+
+.claude-session-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.session-label {
+  color: #858585;
+  font-weight: 500;
+}
+
+.session-value {
+  color: #cccccc;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+}
+
+.claude-active-files {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.active-files-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: #569cd6;
+  text-transform: uppercase;
+}
+
+.active-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.active-file-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background-color: #1e1e1e;
+  border-radius: 3px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.active-file-item:hover {
+  background-color: #2a2d2e;
+  border-color: #3e3e42;
+}
+
+.active-file-item.currently-editing {
+  border-color: #569cd6;
+  background-color: #0e2a3a;
+}
+
+.active-file-icon {
+  font-size: 12px;
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.active-file-path {
+  color: #cccccc;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.active-file-status {
+  font-size: 9px;
+  color: #858585;
+  font-weight: 500;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Claude file highlighting in tree */
+.tree-item.claude-active {
+  border-left: 3px solid #569cd6;
+  background-color: rgba(86, 156, 214, 0.1);
+}
+
+.tree-item.claude-active .name {
+  color: #569cd6;
+  font-weight: 500;
+}
+
+.tree-item.claude-editing {
+  border-left: 3px solid #ffa500;
+  background-color: rgba(255, 165, 0, 0.1);
+  animation: claudeEditingPulse 2s ease-in-out infinite;
+}
+
+.tree-item.claude-editing .name {
+  color: #ffa500;
+}
+
+@keyframes claudeEditingPulse {
+  0% { background-color: rgba(255, 165, 0, 0.1); }
+  50% { background-color: rgba(255, 165, 0, 0.2); }
+  100% { background-color: rgba(255, 165, 0, 0.1); }
+}
+
+.tree-item.claude-active::before {
+  content: "🤖 ";
+  position: absolute;
+  left: -2px;
+  font-size: 10px;
+  color: #569cd6;
+}
+
+.tree-item.claude-editing::before {
+  content: "✏️ ";
+  position: absolute;
+  left: -2px;
+  font-size: 10px;
+}

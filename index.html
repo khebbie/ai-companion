@@ -21,6 +21,44 @@
       <!-- File tree will be populated here -->
     </div>
     
+    <div class="claude-panel" id="claude-panel">
+      <div class="claude-panel-header">
+        <div class="claude-panel-title">
+          <span class="claude-icon">🤖</span>
+          Claude Code Session
+        </div>
+        <div class="claude-panel-controls">
+          <button id="claude-panel-toggle" class="panel-toggle-btn">−</button>
+        </div>
+      </div>
+      <div class="claude-panel-content" id="claude-panel-content">
+        <div class="claude-status" id="claude-status">
+          <div class="status-indicator disconnected"></div>
+          <span class="status-text">Not connected</span>
+        </div>
+        <div class="claude-session-info" id="claude-session-info">
+          <div class="session-item">
+            <span class="session-label">Session:</span>
+            <span class="session-value" id="session-id">None</span>
+          </div>
+          <div class="session-item">
+            <span class="session-label">Activity:</span>
+            <span class="session-value" id="current-activity">Idle</span>
+          </div>
+          <div class="session-item">
+            <span class="session-label">Files in context:</span>
+            <span class="session-value" id="context-files">0</span>
+          </div>
+        </div>
+        <div class="claude-active-files" id="claude-active-files">
+          <div class="active-files-header">Active Files</div>
+          <div class="active-files-list" id="active-files-list">
+            <!-- Active files will be populated here -->
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <div class="context-menu" id="context-menu">
       <!-- Context menu will be populated here -->
     </div>

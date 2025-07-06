@@ -19,7 +19,8 @@
       "Bash(time npm run test:fast)",
       "Bash(grep:*)",
       "Bash(npm test:*)",
-      "Bash(ai-companion:*)"
+      "Bash(ai-companion:*)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
   }

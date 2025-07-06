@@ -17,6 +17,9 @@
   "author": "",
   "license": "ISC",
   "description": "AI Companion - A lightweight file explorer with git integration for development workflows",
+  "dependencies": {
+    "@anthropic-ai/claude-code": "^1.0.43"
+  },
   "devDependencies": {
     "electron": "^37.2.0",
     "electron-reload": "^2.0.0-alpha.1",
